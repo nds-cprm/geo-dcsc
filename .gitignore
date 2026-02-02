@@ -70,3 +70,6 @@ local_settings.py
 .vagrant/
 Vagrantfile
 /.env
+
+# Celery
+src/celerybeat-schedule
