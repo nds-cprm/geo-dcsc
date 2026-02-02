@@ -1,0 +1,25 @@
+{
+  "name": "geodcsc",
+  "version": "0.0.1",
+  "author": "Defesa Civil de Santa Catarina",
+  "description": "Static code and assets for project",
+  "contributors": [
+    {
+    }
+  ],
+  "scripts": {
+    "test": "jshint **.js"
+  },
+  "license": "BSD",
+  "private": "false",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "del": "*",
+    "gulp": "^3.9.0",
+    "gulp-util": "*",
+    "gulp-concat": "*",
+    "gulp-less": "*",
+    "path": "*"
+  }
+}
