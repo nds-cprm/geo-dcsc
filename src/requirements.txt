@@ -3,3 +3,4 @@
 # pip install -e git+https://github.com/GeoNode/geonode-mapstore-client.git@master#egg=django_geonode_mapstore_client
 #git+https://github.com/GeoNode/geonode.git@master#egg=GeoNode
 GeoNode==5.0.1
+django-geonode-mapstore-client==5.0.0
