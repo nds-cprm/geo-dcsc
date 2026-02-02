@@ -20,6 +20,7 @@
 
 # Django settings for the GeoNode project.
 import os
+import ast
 
 # Load more settings from a file called local_settings.py if it exists
 try:
@@ -48,6 +49,10 @@ WSGI_APPLICATION = "{}.wsgi.application".format(PROJECT_NAME)
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = os.getenv("LANGUAGE_CODE", "en")
+
+# Contornar bloqueio de idiomas do Mapstore/Geonode
+# geonode.settings lines 1551-1565
+LANGUAGES = ast.literal_eval(os.getenv("LANGUAGES", MAPSTORE_DEFAULT_LANGUAGES))
 
 if PROJECT_NAME not in INSTALLED_APPS:
     INSTALLED_APPS += (PROJECT_NAME,)
