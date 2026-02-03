@@ -82,3 +82,38 @@ TEMPLATES[0].pop("APP_DIRS", None)
 PROJECT_FIXTURES = [
     # List project-related fixture files here, in the order they should be loaded.
 ]
+
+# Social Accounts
+INSTALLED_APPS += (
+    'allauth.socialaccount.providers.google',
+    # 'allauth.socialaccount.providers.openid_connect',
+)
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+        'FETCH_USERINFO' : True
+    },
+    # 'openid_connect': {
+    #     # "SCOPE": [
+    #     #     "openid",
+    #     #     "email",
+    #     #     "phone",
+    #     #     "profile",
+    #     #     # "govbr_empresa",
+    #     #     # "govbr_confiabilidades"
+    #     # ],
+    #     "OAUTH_PKCE_ENABLED": True,
+    # },
+}
+
+# SOCIALACCOUNT_PROFILE_EXTRACTORS = {
+#     "govbr": "geodcsc.account.profileextractors.GovBRExtractor"
+# }
