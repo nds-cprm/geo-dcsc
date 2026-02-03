@@ -422,6 +422,10 @@
             "graticule": "Adicionar Grade",
             "scale": "Escala",
             "includeScale": "Incluir Escala"
+        },
+        "resourcesCatalog": {
+            "anonymous": "Qualquer um",
+            "registered-members": "Membros registrados"
         }
     }
 }
