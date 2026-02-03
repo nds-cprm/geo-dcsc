@@ -34,6 +34,6 @@ RUN apt-get autoremove --purge &&\
     rm -rf /var/lib/apt/lists/*
 
 COPY src/ /usr/src/project/
-RUN yes w | pip install -e .
+# RUN yes w | pip install -e .
 
 EXPOSE 8000
