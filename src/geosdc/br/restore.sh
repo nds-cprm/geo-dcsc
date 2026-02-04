@@ -49,7 +49,7 @@ echo "-----------------------------------------------------"
 
 NEW_UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 mkdir /$BKP_FOLDER_NAME/$NEW_UUID/
-SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./geodcsc/br/backup.sh $BKP_FOLDER_NAME/$NEW_UUID
+SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./geosdc/br/backup.sh $BKP_FOLDER_NAME/$NEW_UUID
 
 echo "-----------------------------------------------------"
 echo " 2. CHECK BACKUP.md5 $TARGET_URL"

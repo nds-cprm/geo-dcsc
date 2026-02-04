@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "geodcsc"
+name = "geosdc"
 version = "0.0.1"
-description = "GeoNode Project"
+description = "GeoNode Defesa Civil de Santa Catarina"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "GPL-3.0-or-later" }
@@ -13,11 +13,11 @@ keywords = ["project", "geonode", "django"]
 
 # Equivalent modern replacement for dependency_links:
 dependencies = [
-  "GeoNode @ git+https://github.com/GeoNode/geonode.git"
+  "GeoNode==5.0.1"
 ]
 
 [project.urls]
-Homepage = "https://github.com/GeoNode/geonode-project"
+Homepage = "https://github.com/nds-cprm/geo-dcsc"
 
 [tool.setuptools]
 include-package-data = true

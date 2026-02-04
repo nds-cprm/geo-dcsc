@@ -508,7 +508,7 @@ def _update_geodb_connstring():
 
 
 def _localsettings():
-    settings = os.getenv("DJANGO_SETTINGS_MODULE", "geodcsc.settings")
+    settings = os.getenv("DJANGO_SETTINGS_MODULE", "geosdc.settings")
     return settings
 
 

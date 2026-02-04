@@ -24,7 +24,7 @@ import ast
 
 # Load more settings from a file called local_settings.py if it exists
 try:
-    from geodcsc.local_settings import *
+    from geosdc.local_settings import *
 #    from geonode.local_settings import *
 except ImportError:
     from geonode.settings import *
@@ -32,13 +32,13 @@ except ImportError:
 #
 # General Django development settings
 #
-PROJECT_NAME = "geodcsc"
+PROJECT_NAME = "geosdc"
 
 # add trailing slash to site url. geoserver url will be relative to this
 if not SITEURL.endswith("/"):
     SITEURL = "{}/".format(SITEURL)
 
-SITENAME = os.getenv("SITENAME", "geodcsc")
+SITENAME = os.getenv("SITENAME", "geosdc")
 
 # Defines the directory that contains the settings file as the LOCAL_ROOT
 # It is used for relative settings elsewhere.
@@ -115,5 +115,5 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 # SOCIALACCOUNT_PROFILE_EXTRACTORS = {
-#     "govbr": "geodcsc.account.profileextractors.GovBRExtractor"
+#     "govbr": "geosdc.account.profileextractors.GovBRExtractor"
 # }

@@ -1,6 +1,16 @@
 {
     "locale": "pt-BR",
     "messages": {
+        "metadata": {
+            "error": {
+                "must match exactly one schema in oneOf": "Por favor, selecione um dos valores disponíveis.",
+                "must be string": "O valor deve ser uma string",
+                "must be object": "O valor deve ser um objeto",
+                "must NOT have fewer than 1 items": "Por favor, selecione pelo menos um item",
+                "must match format \"uri\"": "Por favor, insira um 'URI' válida",
+                "must have required property": "Esta propriedade é obrigatória"
+            }
+        },
         "geostory": {
             "geoNode": "GeoNode"
         },
@@ -51,6 +61,7 @@
             "groupsCategories": "Categorias de Grupo",
             "view": "Ver",
             "viewDataset": "Ver conjunto de dados",
+            "viewDatasets": "Ver conjuntos de dados",
             "viewMap": "Ver mapa",
             "viewGeoStory": "Ver GeoStory",
             "viewDocument": "Ver documento",
@@ -154,6 +165,12 @@
             },
             "errors": {
                 "noPermissions": "Você não tem permissão para adicionar um geostory"
+            },
+            "print": {
+                "author": "Autor",
+                "authorPlaceholder": "Digite o nome do autor...",
+                "copyright": "Direitos Autorais",
+                "copyrightPlaceholder": "Forneça os Direitos Autorais..."
             }
         },
         "gnviewer": {
@@ -168,6 +185,7 @@
             "exportData": "Exportar Dados",
             "editInfo": "Alterar Informações",
             "editMetadata": "Alterar Metadados",
+            "fillMetadata": "Preencher Metadados",
             "editStyle": "Alterar Estilo",
             "editData": "Alterar Dados",
             "view": "Visualizar",
@@ -185,14 +203,18 @@
             "moreinfo": "Mais info",
             "setMapLikeThumbnail": "Definir miniatura do mapa",
             "thumbnailsaved": "Miniatura salva",
+            "thumbnailRemoved": "miniatura removida",
             "thumbnailnotsaved": "Erro: Miniatura não foi salva",
             "info": "Info",
             "attributeName": "Nome do atributo",
             "label": "Rótulo",
             "description": "Descrição",
             "attributes": "Atributos",
+            "data": "Dados",
             "filterBy": "Filtrar...",
-            "addPermissionsEntry": "Adicionar Usuários / Grupos",
+            "addPermissionsEntry": "Adicionar Usuários / Grupos",            
+            "group": "Grupo",
+            "groupPlaceholder": "Selecione o grupo",
             "groups": "Grupos",
             "users": "Usuários",
             "nonePermission": "Nenhum",
@@ -260,8 +282,12 @@
             "deleteStyleMessage": "Tem certeza que deseja excluir este estilo?",
             "deleteStyleCancel": "Não, não exclua",
             "deleteStyleConfirm": "Sim, tenho certeza",
-            "syncErrorTitle": "Não é possível sincronizar o geostory atual",
+            "syncErrorgeostoryTitle": "Não é possível sincronizar o geostory atual",
+            "syncErrordashboardTitle": "Não é possível sincronizar o dashboard atual",
+            "syncErrorTitle": "Não é possível sincronizar",
             "syncErrorDefault": "Erro de Rede",
+            "syncSuccessgeostoryTitle": "Geostory sincronizado com sucesso",
+            "syncSuccessdashboardTitle": "Dashboard sincronizado com sucesso",
             "syncSuccessTitle": "Geostory sincronizado",
             "syncSuccessMessage": "Sincronizado com sucesso",
             "syncWarningTitle": "Não foi possível sincronizar alguns recursos",
@@ -274,7 +300,6 @@
                 "a": "a",
                 "from": "from"
             },
-            "syncSuccessdashboardTitle": "Painel sincronizado com sucesso",
             "styleEditorCloseTitle": "Alterações pendentes",
             "styleEditorCloseMessage": "Você tem certeza em fechar o editor de estilos, sem aplicar as mudanças??",
             "styleEditorCloseCancel": "Não, voltar para o editor de estilos",
@@ -293,6 +318,12 @@
             "supportedFiles": "Extensões de arquivo suportadas",
             "unsupportedFiles": "Arquivos não suportados para o carregamento",
             "upload": "Carregar",
+            "update": "Atualizar",
+            "replace": "Substituir",
+            "replaceDatasetConfirmTitle": "Are you sure you want to replace the dataset?",
+            "replaceDatasetConfirmMessage": "This action cannot be undone. The current dataset will be replaced with the new content.",
+
+
             "addFromUrl": "Adicionar de URL...",
             "invalidUrl": "Forneça uma URL absoluta válida",
             "unsupportedUrlServiceType": "Selecione o tipo de serviço",
