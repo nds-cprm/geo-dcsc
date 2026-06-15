@@ -73,3 +73,10 @@ Vagrantfile
 
 # Celery
 src/celerybeat-schedule
+
+# diretório de rascunho
+draft/
+
+# envs
+.env*
+!.env.sample
