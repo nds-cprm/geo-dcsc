@@ -1,0 +1,17 @@
+[
+{
+  "model": "base.license",
+  "pk": 8,
+  "fields": {
+    "identifier": "",
+    "name": "Creative Commons 4.0 (BY-NC)",
+    "name_en": "Creative Commons 4.0 (BY-NC)",
+    "abbreviation": "CC-BY-NC 4.0",
+    "description": "Creative Commons Attribution-NonCommercial 4.0 International",
+    "description_en": "Creative Commons Attribution-NonCommercial 4.0 International",
+    "url": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "license_text": null,
+    "license_text_en": null
+  }
+}
+]

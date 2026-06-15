@@ -21,6 +21,7 @@
 # Django settings for the GeoNode project.
 import os
 import ast
+import glob
 
 # Load more settings from a file called local_settings.py if it exists
 try:
@@ -117,3 +118,6 @@ SOCIALACCOUNT_PROVIDERS = {
 # SOCIALACCOUNT_PROFILE_EXTRACTORS = {
 #     "govbr": "geosdc.account.profileextractors.GovBRExtractor"
 # }
+
+# Project Fixtures
+PROJECT_FIXTURES = glob.glob(os.path.join(LOCAL_ROOT, "fixtures", "*.json"))
