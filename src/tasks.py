@@ -382,7 +382,7 @@ def fixtures(ctx):
 def collectstatic(ctx):
     print("************************static artifacts******************************")
     ctx.run(
-        f"django-admin collectstatic --noinput \
+        f"python manage.py collectstatic --noinput \
 --settings={_localsettings()}",
         pty=True,
     )
@@ -397,7 +397,7 @@ def updateadmin(ctx):
         os.environ.get("ADMIN_EMAIL", "admin@example.org"),
     )
     ctx.run(
-        f"django-admin loaddata /tmp/django_admin_docker.json \
+        f"python manage.py loaddata /tmp/django_admin_docker.json \
 --settings={_localsettings()}",
         pty=True,
     )
