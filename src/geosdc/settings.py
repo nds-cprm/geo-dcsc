@@ -121,3 +121,8 @@ SOCIALACCOUNT_PROVIDERS = {
 
 # Project Fixtures
 PROJECT_FIXTURES = glob.glob(os.path.join(LOCAL_ROOT, "fixtures", "*.json"))
+
+# Flatpages + CKEditor
+INSTALLED_APPS += ("django.contrib.flatpages", "ckeditor")
+
+MIDDLEWARE += ('django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',)
