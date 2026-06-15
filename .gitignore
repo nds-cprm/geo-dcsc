@@ -74,6 +74,9 @@ Vagrantfile
 # Celery
 src/celerybeat-schedule
 
+# MacOSX specific
+.DS_Store
+
 # diretório de rascunho
 draft/
 
