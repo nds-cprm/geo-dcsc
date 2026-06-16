@@ -4,13 +4,12 @@
 {% block title %} {{ flatpage.title }} — {{ block.super }} {% endblock %}
 
 {% block extra_head %}
+{{ block.super }}
 {% endblock %}
 
 {% block body_outer %}
 <div class="page-header">
   <h2>{{ flatpage.title }}</h2>
 </div>
-<div class="page-content">
-  {{ flatpage.content }}
-</div>
+{{ flatpage.content }}
 {% endblock %}
