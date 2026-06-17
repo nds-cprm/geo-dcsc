@@ -1,0 +1,18 @@
+x-common-extra-hosts:
+  &extra-hosts
+  extra_hosts:
+    - "db:10.112.2.166"
+
+services:
+  django:
+    <<: *extra-hosts
+
+  celery:
+    <<: *extra-hosts
+
+  geoserver:
+    <<: *extra-hosts
+
+  db:
+    deploy:
+      replicas: 0
