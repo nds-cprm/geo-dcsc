@@ -1,0 +1,14 @@
+services:
+  django:
+    ports:
+      - "8000:8000"
+
+  # celery:
+
+  geoserver:
+    ports:
+      - "8080:8080"
+
+  db:
+    ports:
+      - "5432:5432"
