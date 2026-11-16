@@ -18,6 +18,11 @@
 #   DOCKER_ENV=hml ./geosdc ps
 #   CONTAINER_ENGINE=podman ./geosdc up -d
 #
+# Arquivo .env:
+#   Se não existir, é criado como link simbólico para o arquivo do ambiente
+#   (dev -> .env.dev, hml -> .env.hml, prd -> .env.prod); nesse caso o DOCKER_ENV
+#   precisa vir do shell. Um .env existente nunca é alterado.
+#
 # Engine de containers (Docker ou Podman):
 #   CONTAINER_ENGINE=docker|podman força o engine; se ausente, usa o Docker quando
 #   o daemon responde e, senão, o Podman (que precisa da VM ativa no macOS/Windows).
@@ -38,21 +43,54 @@ usage() {
 # Executa a partir do diretório do projeto, independente de onde foi chamado
 cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-env_type="${DOCKER_ENV:-}"
-if [ -z "$env_type" ] && [ -f .env ]; then
-    # Lê somente a linha DOCKER_ENV (sem carregar o restante do .env)
-    env_type="$(sed -n -E 's/^DOCKER_ENV=["'\'']?([^"'\'' #]*).*/\1/p' .env | tail -n 1)"
+if [ -L .env ] && [ ! -e .env ]; then
+    echo "O .env é um link simbólico quebrado (-> $(readlink .env)); corrija ou remova-o" >&2
+    exit 1
+fi
+
+# Normaliza os apelidos de ambiente (dev|hml|prd) para comparação
+canon_env() {
+    case "$1" in
+        dev|development)     echo dev ;;
+        hml|homolog|staging) echo hml ;;
+        prd|prod|production) echo prd ;;
+        *)                   echo "$1" ;;
+    esac
+}
+
+# Lê somente a linha DOCKER_ENV do .env (sem carregar o restante)
+file_env=""
+if [ -f .env ]; then
+    file_env="$(sed -n -E 's/^DOCKER_ENV=["'\'']?([^"'\'' #]*).*/\1/p' .env | tail -n 1)"
+fi
+
+env_type="${DOCKER_ENV:-$file_env}"
+
+if [ -n "${DOCKER_ENV:-}" ] && [ -n "$file_env" ] && [ "$(canon_env "$DOCKER_ENV")" != "$(canon_env "$file_env")" ]; then
+    echo ">> AVISO: DOCKER_ENV=$DOCKER_ENV no shell, mas o .env é de '$file_env': override de $(canon_env "$DOCKER_ENV") com as variáveis de $(canon_env "$file_env")" >&2
 fi
 
 case "$env_type" in
-    dev|development)        override="docker-compose-dev.yml" ;;
-    hml|homolog|staging)    override="docker-compose-hml.yml" ;;
-    prd|prod|production)    override="docker-compose-prod.yml" ;;
+    dev|development)        override="docker-compose-dev.yml";  env_src=".env.dev" ;;
+    hml|homolog|staging)    override="docker-compose-hml.yml";  env_src=".env.hml" ;;
+    prd|prod|production)    override="docker-compose-prod.yml"; env_src=".env.prod" ;;
     "") echo "DOCKER_ENV não definido (nem no shell, nem no .env)" >&2; usage ;;
     *)  echo "DOCKER_ENV inválido: '$env_type'" >&2; usage ;;
 esac
 
 echo ">> Ambiente: $env_type ($override)" >&2
+
+# O compose usa sempre o .env (env_file e interpolação). Se ele não existir, cria um
+# link simbólico para o arquivo do ambiente (.env.dev, .env.hml ou .env.prod).
+# Um .env já existente (arquivo ou link) nunca é alterado.
+if [ ! -e .env ]; then
+    if [ ! -f "$env_src" ]; then
+        echo "Não há .env nem $env_src para o ambiente '$env_type'" >&2
+        exit 1
+    fi
+    ln -s "$env_src" .env
+    echo ">> Criado link simbólico .env -> $env_src" >&2
+fi
 
 # Detecta o engine de containers: CONTAINER_ENGINE (docker|podman) força a escolha;
 # sem ela, usa o Docker se o daemon responder e, senão, o Podman.
