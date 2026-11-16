@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Atalho para o docker compose com o override do ambiente definido em DOCKER_ENV.
+#
+# O ambiente é lido da variável DOCKER_ENV do shell; se não estiver definida,
+# é lido da linha DOCKER_ENV do arquivo .env do projeto.
+#
+# Valores aceitos:
+#   dev | development             -> docker-compose-dev.yml
+#   hml | homolog | staging       -> docker-compose-hml.yml
+#   prd | prod | production       -> docker-compose-prod.yml
+#
+# Uso:
+#   ./geosdc <comando do compose> [args...]
+#
+# Exemplos:
+#   ./geosdc up -d
+#   ./geosdc logs -f django
+#   DOCKER_ENV=hml ./geosdc ps
+#   CONTAINER_ENGINE=podman ./geosdc up -d
+#
+# Engine de containers (Docker ou Podman):
+#   CONTAINER_ENGINE=docker|podman força o engine; se ausente, usa o Docker quando
+#   o daemon responde e, senão, o Podman (que precisa da VM ativa no macOS/Windows).
+#
+# Equivale a:
+#   docker compose -f docker-compose.yml -f docker-compose-<amb>.yml <comando> [args...]
+#   podman compose -f docker-compose.yml -f docker-compose-<amb>.yml <comando> [args...]
+
+set -euo pipefail
+
+usage() {
+    echo "Uso: [DOCKER_ENV=<dev|hml|prd>] $(basename "$0") <comando do compose> [args...]" >&2
+    exit 1
+}
+
+[ $# -ge 1 ] || usage
+
+# Executa a partir do diretório do projeto, independente de onde foi chamado
+cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
+env_type="${DOCKER_ENV:-}"
+if [ -z "$env_type" ] && [ -f .env ]; then
+    # Lê somente a linha DOCKER_ENV (sem carregar o restante do .env)
+    env_type="$(sed -n -E 's/^DOCKER_ENV=["'\'']?([^"'\'' #]*).*/\1/p' .env | tail -n 1)"
+fi
+
+case "$env_type" in
+    dev|development)        override="docker-compose-dev.yml" ;;
+    hml|homolog|staging)    override="docker-compose-hml.yml" ;;
+    prd|prod|production)    override="docker-compose-prod.yml" ;;
+    "") echo "DOCKER_ENV não definido (nem no shell, nem no .env)" >&2; usage ;;
+    *)  echo "DOCKER_ENV inválido: '$env_type'" >&2; usage ;;
+esac
+
+echo ">> Ambiente: $env_type ($override)" >&2
+
+# Detecta o engine de containers: CONTAINER_ENGINE (docker|podman) força a escolha;
+# sem ela, usa o Docker se o daemon responder e, senão, o Podman.
+engine_ok() {
+    case "$1" in
+        docker) command -v docker >/dev/null 2>&1 && docker version --format '{{.Server.Version}}' >/dev/null 2>&1 ;;
+        podman) command -v podman >/dev/null 2>&1 && podman info --format '{{.Host.Arch}}' >/dev/null 2>&1 ;;
+        *) return 1 ;;
+    esac
+}
+
+engine="${CONTAINER_ENGINE:-}"
+if [ -n "$engine" ]; then
+    case "$engine" in
+        docker|podman) ;;
+        *) echo "CONTAINER_ENGINE inválido: '$engine' (use docker ou podman)" >&2; exit 1 ;;
+    esac
+    engine_ok "$engine" || { echo "CONTAINER_ENGINE='$engine' indisponível (CLI ausente ou daemon/VM parado)" >&2; exit 1; }
+elif engine_ok docker; then
+    engine=docker
+elif engine_ok podman; then
+    engine=podman
+else
+    echo "Nenhum engine de containers disponível: instale/inicie o Docker ou o Podman (podman machine start)" >&2
+    exit 1
+fi
+
+case "$engine" in
+    docker)
+        # Plugin "docker compose" (v2), com fallback para "docker-compose" (v1)
+        if docker compose version >/dev/null 2>&1; then
+            compose=(docker compose)
+        else
+            compose=(docker-compose)
+        fi
+        ;;
+    podman)
+        # "podman compose" delega ao provider instalado (docker-compose ou podman-compose)
+        # já apontando DOCKER_HOST para o socket do Podman
+        export PODMAN_COMPOSE_WARNING_LOGS=false   # suprime o aviso ">>>> Executing external compose provider"
+        compose=(podman compose)
+        ;;
+esac
+
+echo ">> Engine: $engine (${compose[*]})" >&2
+
+exec "${compose[@]}" -f docker-compose.yml -f "$override" "$@"
