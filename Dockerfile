@@ -29,7 +29,27 @@ RUN chmod +x /usr/bin/celery-cmd
 RUN python -m pip install -U pip setuptools wheel
 RUN yes w | pip install --src /usr/src -r requirements.txt
 
-RUN apt-get autoremove --purge &&\
+# Segurança: o GeoNode 5.0.3.post1 fixa Pillow==12.1.1 (~60 CVEs no OSV, incl. heap overflow e RCE
+# via Ghostscript). Substitui pelo Pillow 13 após instalar o GeoNode; o pip avisa do conflito com o
+# pin, o que é esperado. Revisar/remover quando o GeoNode atualizar o pin.
+RUN pip install --no-cache-dir "Pillow==13.0.0"
+
+# Cliente PostgreSQL 17 (pg_dump/psql do backup do GeoNode): o pg_dump precisa ser da mesma
+# versão do servidor (PostgreSQL 17 no dev) ou mais novo; também atende servidores mais antigos.
+# O pg_wrapper (postgresql-client-common) usa a versão mais nova instalada.
+# A imagem base bloqueia o repositório PGDG (/etc/apt/preferences.d/pgdg, Pin-Priority -1)
+# exceto o client-15: libera aqui o client-17, a libpq5 (o client-17 exige libpq5 >= 17; a
+# libpq.so.5 é compatível com a 16 do Ubuntu, usada pelo psycopg2/GDAL) e a libpq-dev (sem ela
+# o apt remove libpq-dev/libgdal-dev em vez de atualizá-las). O autoremove fica sem -y de
+# propósito: se algo inesperado for removido, o build falha em vez de apagar bibliotecas.
+# Base 24.04 (Python 3.12): a 26.04 (Python 3.14) não instala o GeoNode 5.0.3 (lxml==5.2.1 e
+# pylibmc==1.6.3 fixados sem wheel para 3.14).
+# Fica após o pip install para não invalidar o cache das dependências.
+RUN printf 'Package: postgresql-client-17 libpq5 libpq-dev\nPin: release o=apt.postgresql.org\nPin-Priority: 500\n' \
+        > /etc/apt/preferences.d/pgdg-client-17 &&\
+    apt-get update -y &&\
+    apt-get install -y --no-install-recommends postgresql-client-17 &&\
+    apt-get autoremove --purge &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
 
