@@ -59,8 +59,8 @@ services:
     container_name: nginx4${COMPOSE_PROJECT_NAME}
     env_file:
       - .env
-    # environment:
-    #   - RESOLVER=127.0.0.11
+    # RESOLVER (DNS do nginx) é detectado pelo /etc/resolv.conf do container quando não definido
+    # no .env (Docker: 127.0.0.11; Podman: gateway da rede). Defina só para forçar outro servidor.
     # A imagem é nginx-unprivileged: dentro do container o nginx escuta em 8080 (HTTP) e 8443 (HTTPS).
     # No host, as portas publicadas são HTTP_PORT/HTTPS_PORT do .env (as mesmas usadas pelo nginx para
     # montar o Host/redirects). Em Docker/Podman rootless, publicar portas < 1024 exige no host
