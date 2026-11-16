@@ -34,6 +34,12 @@ RUN apt-get autoremove --purge &&\
     rm -rf /var/lib/apt/lists/*
 
 COPY src/ /usr/src/project/
+
+# Atalho para o manage.py dentro do container (django/celery): geosdc-cli <comando>
+# Instalado no bin do virtualenv (/usr/src/venv/bin, primeiro no PATH da imagem base).
+# Fica após o pip install para não invalidar o cache das dependências.
+COPY src/geosdc-cli /usr/src/venv/bin/geosdc-cli
+RUN chmod +x /usr/src/venv/bin/geosdc-cli
 # RUN yes w | pip install -e .
 
 EXPOSE 8000

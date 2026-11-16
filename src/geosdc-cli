@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Atalho para o "python manage.py" do geosdc, para uso DENTRO dos containers django/celery.
+# Instalado na imagem em /usr/src/venv/bin/geosdc-cli, no PATH (ver Dockerfile).
+#
+# Uso (dentro do container):
+#   geosdc-cli <comando do manage.py> [args...]
+#
+# Exemplos:
+#   geosdc-cli showmigrations
+#   geosdc-cli createsuperuser
+#   geosdc-cli shell
+#
+# A partir do host:
+#   ./geosdc exec django geosdc-cli showmigrations
+#   ./geosdc exec -T django geosdc-cli dumpdata people.Profile --indent 2 > profiles.json
+
+set -euo pipefail
+
+PROJECT_DIR=${PROJECT_DIR:-/usr/src/project}
+
+if [ $# -lt 1 ]; then
+    echo "Uso: $(basename "$0") <comando do manage.py> [args...]" >&2
+    echo "Ex.: $(basename "$0") help" >&2
+    exit 1
+fi
+
+# Carrega as variáveis calculadas pela task "update" do entrypoint (SITEURL, URLs de
+# banco, GeoServer...), como faz o próprio entrypoint antes de subir uWSGI/Celery.
+if [ -f "$HOME/.override_env" ]; then
+    # shellcheck disable=SC1091
+    source "$HOME/.override_env"
+fi
+
+cd "$PROJECT_DIR"
+exec python manage.py "$@"
