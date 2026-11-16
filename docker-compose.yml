@@ -98,7 +98,11 @@ services:
       - .env
     volumes:
       - nginx-certificates:/geonode-certificates
-    restart: unless-stopped
+    # Sem restart automático: com LETSENCRYPT_MODE=disabled o container sai com 0, e o
+    # "unless-stopped" o reiniciava em loop (no Podman, sem espera: ~8 reinícios/s).
+    # A emissão/renovação deve rodar como job agendado fora do container
+    # (ex.: timer/cron do host chamando "./geosdc run --rm letsencrypt").
+    restart: "no"
 
   # Geoserver backend
   geoserver:
