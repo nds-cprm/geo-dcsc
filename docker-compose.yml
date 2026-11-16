@@ -121,6 +121,9 @@ services:
       retries: 2
     env_file:
       - .env
+    environment:
+      # Onde o entrypoint grava o .override_env; gravável para qualquer UID (preparação para rodar sem root)
+      - HOME=/tmp
     # ports:
     #  - "8080:8080"
     # O data dir é populado pela própria imagem do GeoServer no primeiro boot
