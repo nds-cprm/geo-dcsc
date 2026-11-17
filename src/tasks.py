@@ -67,8 +67,9 @@ def update(ctx):
             time.sleep(1)
 
     override_env = "$HOME/.override_env"
-    if os.path.exists(override_env):
-        os.remove(override_env)
+    # expandvars: o caminho literal com "$HOME" nunca existia, e o arquivo crescia a cada execução
+    if os.path.exists(os.path.expandvars(override_env)):
+        os.remove(os.path.expandvars(override_env))
     else:
         print(f"Can not delete the {override_env} file as it doesn't exists")
 

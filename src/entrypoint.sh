@@ -3,19 +3,31 @@
 # Exit script in case of error
 set -e
 
+# Sem root (qualquer UID do grupo 0, como o UID aleatório do OpenShift): arquivos criados nos volumes
+# compartilhados (estáticos, mídia, data dir do GeoServer, backups) nascem com escrita do grupo 0 (g=u),
+# para o geoserver e os demais containers continuarem gravando neles.
+umask 0002
+
+# Estado do entrypoint (.override_env) em $HOME (/tmp na imagem, exclusivo de cada container). Se o
+# runtime redefinir o HOME para um diretório sem escrita, usa /tmp.
+if [ ! -w "${HOME:-/nonexistent}" ]; then
+    HOME=/tmp
+fi
+export HOME
+
 INVOKE_LOG_STDOUT=${INVOKE_LOG_STDOUT:-FALSE}
 invoke () {
     if [ "$INVOKE_LOG_STDOUT" = 'true' ] || [ "$INVOKE_LOG_STDOUT" = 'True' ]
     then
         /usr/local/bin/invoke $@
     else
-        /usr/local/bin/invoke $@ > /usr/src/project/invoke.log 2>&1
+        /usr/local/bin/invoke $@ > /var/log/invoke.log 2>&1
     fi
     echo "$@ tasks done"
 }
 
-# Start cron service
-service cron restart
+# Removido: "service cron restart" exige root, e o cron da imagem só tem os jobs do e2scrub (sem uso em
+# container). Tarefas periódicas ficam no cron do uWSGI (uwsgi.ini) e no Celery beat.
 
 echo $"\n\n\n"
 echo "-----------------------------------------------------"
@@ -24,8 +36,10 @@ echo "-----------------------------------------------------"
 
 invoke update
 
-source $HOME/.bashrc
-source $HOME/.override_env
+if [ -f "$HOME/.bashrc" ]; then
+    source "$HOME/.bashrc"
+fi
+source "$HOME/.override_env"
 
 echo DOCKER_API_VERSION=$DOCKER_API_VERSION
 echo POSTGRES_USER=$POSTGRES_USER

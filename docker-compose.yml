@@ -5,13 +5,23 @@ x-common-django:
   restart: unless-stopped
   env_file:
     - .env
+  # Sem root (qualquer UID do grupo 0 funciona, como o UID aleatório do OpenShift) e com filesystem
+  # somente leitura: graváveis só os volumes e os tmpfs abaixo. O /tmp é exclusivo de cada container
+  # (HOME=/tmp na imagem: .override_env, fixtures geradas, estado do celery beat), e o /var/log guarda
+  # os logs do uWSGI, Celery e invoke.
+  user: "1001:0"
+  read_only: true
+  tmpfs:
+    - /tmp:mode=1777
+    - /var/log:mode=1777
   volumes:
     # - './src:/usr/src/project'  # Uncomment for local development
     - statics:/mnt/volumes/statics
     - geoserver-data-dir:/geoserver_data/data
     - backup-restore:/backup_restore
     - data:/data
-    - tmp:/tmp
+    # Compartilhado entre django e celery, em disco: TMPDIR da imagem (temporários do Python e dos uploads)
+    - tmp:/tmp/geonode
   depends_on:
     db:
       condition: service_healthy
@@ -123,7 +133,7 @@ services:
     env_file:
       - .env
     environment:
-      # Onde o entrypoint grava o .override_env; gravável para qualquer UID
+      # Onde o entrypoint grava o .override_env: o /tmp do container (tmpfs abaixo)
       - HOME=/tmp
     # Sem root (qualquer UID do grupo 0 funciona, como o UID aleatório do OpenShift) e com filesystem
     # somente leitura: graváveis só os volumes e os tmpfs de trabalho do Tomcat abaixo
@@ -133,6 +143,7 @@ services:
       - /usr/local/tomcat/logs:mode=1777
       - /usr/local/tomcat/temp:mode=1777
       - /usr/local/tomcat/work:mode=1777
+      - /tmp:mode=1777
     # ports:
     #  - "8080:8080"
     # O data dir é populado pela própria imagem do GeoServer no primeiro boot
@@ -142,7 +153,8 @@ services:
       - geoserver-data-dir:/geoserver_data/data
       - backup-restore:/backup_restore
       - data:/data
-      - tmp:/tmp
+      # Sem o volume tmp: o GeoServer não lê nada que o GeoNode grave em temporário (uploads e restore
+      # passam por MEDIA_ROOT/ASSETS_ROOT no statics e por /backup_restore)
     restart: unless-stopped
     depends_on:
       django:
