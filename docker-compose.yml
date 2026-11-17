@@ -123,8 +123,16 @@ services:
     env_file:
       - .env
     environment:
-      # Onde o entrypoint grava o .override_env; gravável para qualquer UID (preparação para rodar sem root)
+      # Onde o entrypoint grava o .override_env; gravável para qualquer UID
       - HOME=/tmp
+    # Sem root (qualquer UID do grupo 0 funciona, como o UID aleatório do OpenShift) e com filesystem
+    # somente leitura: graváveis só os volumes e os tmpfs de trabalho do Tomcat abaixo
+    user: "1001:0"
+    read_only: true
+    tmpfs:
+      - /usr/local/tomcat/logs:mode=1777
+      - /usr/local/tomcat/temp:mode=1777
+      - /usr/local/tomcat/work:mode=1777
     # ports:
     #  - "8080:8080"
     # O data dir é populado pela própria imagem do GeoServer no primeiro boot
