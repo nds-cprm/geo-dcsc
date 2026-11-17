@@ -20,6 +20,10 @@
 # Exit script in case of error
 set -e
 
+# Rodam via exec, fora do entrypoint: arquivos criados nos volumes compartilhados (backups, data dir
+# do GeoServer) com escrita do grupo 0, como no entrypoint
+umask 0002
+
 echo "-----------------------------------------------------"
 echo "STARTING project BACKUP $(date)"
 echo "-----------------------------------------------------"

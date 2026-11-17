@@ -16,6 +16,9 @@
 
 set -euo pipefail
 
+# Arquivos criados nos volumes compartilhados com escrita do grupo 0, como no entrypoint
+umask 0002
+
 PROJECT_DIR=${PROJECT_DIR:-/usr/src/project}
 
 if [ $# -lt 1 ]; then
