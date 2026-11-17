@@ -95,7 +95,10 @@ INSTALLED_APPS += (
 ACCOUNT_ADAPTER = "geosdc.adapters.AccountAdapter"
 INVITATIONS_ADAPTER = ACCOUNT_ADAPTER
 
-SOCIALACCOUNT_PROVIDERS = {
+# Mescla com a configuração do GeoNode (mantém o geonode_openid_connect, reservado para um futuro
+# OIDC como o gov.br: SOCIALACCOUNT_PROVIDERS[SOCIALACCOUNT_OIDC_PROVIDER] = {...}). O Google usa
+# o provider nativo do allauth.
+SOCIALACCOUNT_PROVIDERS.update({
     'google': {
         'SCOPE': [
             'profile',
@@ -118,7 +121,7 @@ SOCIALACCOUNT_PROVIDERS = {
     #     # ],
     #     "OAUTH_PKCE_ENABLED": True,
     # },
-}
+})
 
 # SOCIALACCOUNT_PROFILE_EXTRACTORS = {
 #     "govbr": "geosdc.account.profileextractors.GovBRExtractor"
