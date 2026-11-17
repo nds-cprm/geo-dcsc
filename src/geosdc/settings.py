@@ -129,3 +129,8 @@ SOCIALACCOUNT_PROVIDERS.update({
 
 # Project Fixtures
 PROJECT_FIXTURES = glob.glob(os.path.join(LOCAL_ROOT, "fixtures", "*.json"))
+
+# Trava do envio da fila de notificações (pinax, task send_queued_notifications do Celery, usada com
+# ASYNC_SIGNALS=True): sem isto, o arquivo de trava é criado no diretório atual (/usr/src/project),
+# que é somente leitura. /tmp é o tmpfs do container: a trava some num restart, sem ficar presa.
+NOTIFICATION_LOCK_LOCATION = "/tmp/send_notices"
