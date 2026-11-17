@@ -18,7 +18,6 @@ Instância [GeoNode](https://geonode.org/) da **Defesa Civil de Santa Catarina**
 - **GeoNode 5.0.3** (`geonode==5.0.3.post1`) com `django-geonode-mapstore-client` 5.0.3 e GeoServer 2.28. As dependências Python ficam em [src/requirements.txt](src/requirements.txt).
 - **Interface em português:** traduções pt-BR do MapStore em [src/geosdc/static/mapstore/](src/geosdc/static/mapstore/). A lista de idiomas vem da variável `LANGUAGES` do `.env`, o que contorna o bloqueio de idiomas do MapStore.
 - **Identidade visual do governo de SC:** rodapé, favicon, CSS e tema próprios em [src/geosdc/templates/](src/geosdc/templates/) e [src/geosdc/static/](src/geosdc/static/).
-- **Páginas institucionais** com `django.contrib.flatpages`, editadas no admin com CKEditor e servidas em `/pages/`.
 - **Login social com Google** via `django-allauth`. Há um rascunho comentado para OpenID Connect / gov.br em [src/geosdc/settings.py](src/geosdc/settings.py).
 - **Fixtures do projeto** (licença e regiões) em [src/geosdc/fixtures/](src/geosdc/fixtures/), carregadas no primeiro boot.
 - **Stack completa em containers** (Docker ou Podman), com overrides por ambiente: desenvolvimento, homologação e produção. Em homologação e produção o banco PostgreSQL é externo.
