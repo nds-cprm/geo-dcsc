@@ -71,7 +71,8 @@ services:
     volumes:
       - nginx-confd:/etc/nginx
       - nginx-certificates:/geonode-certificates
-      - statics:/mnt/volumes/statics
+      # Somente leitura: o nginx só serve os estáticos e a mídia gravados pelo GeoNode
+      - statics:/mnt/volumes/statics:ro
     restart: unless-stopped
 
   # memcached service

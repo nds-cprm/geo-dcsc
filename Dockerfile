@@ -55,6 +55,13 @@ RUN printf 'Package: postgresql-client-17 libpq5 libpq-dev\nPin: release o=apt.p
 
 COPY src/ /usr/src/project/
 
+# Pontos de montagem dos volumes compartilhados com grupo 0 e g=u: num volume novo, o primeiro
+# container que o monta define, pelo copy-up, dono e permissões a partir deste diretório. O django
+# sobe antes do geoserver e também monta o data dir do GeoServer, então precisa prepará-lo.
+RUN mkdir -p /mnt/volumes/statics /geoserver_data/data /backup_restore /data &&\
+    chgrp -R 0 /mnt/volumes/statics /geoserver_data/data /backup_restore /data &&\
+    chmod -R g=u /mnt/volumes/statics /geoserver_data/data /backup_restore /data
+
 # Atalho para o manage.py dentro do container (django/celery): geosdc-cli <comando>
 # Instalado no bin do virtualenv (/usr/src/venv/bin, primeiro no PATH da imagem base).
 # Fica após o pip install para não invalidar o cache das dependências.
