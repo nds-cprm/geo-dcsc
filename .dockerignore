@@ -1,0 +1,12 @@
+# Contexto de build da imagem django (raiz). O Dockerfile só copia src/, mas o contexto inteiro é
+# enviado ao builder: fora segredos, rascunhos, ambientes locais e arquivos gerados em runtime.
+.git
+.env*
+!.env.sample
+draft/
+venv/
+docker/
+*.geojson
+**/__pycache__
+**/*.pyc
+src/celerybeat-schedule
