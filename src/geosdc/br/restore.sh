@@ -95,7 +95,8 @@ if md5sum -c /$BKP_FOLDER_NAME/$NEW_UUID/$BKP_FILE_NAME.md5; then
         echo "-----------------------------------------------------"
         echo " Cleanup memcached"
         echo "-----------------------------------------------------"
-        echo "flush_all" | nc -q 1 memcached 11211
+        # A imagem do django não tem nc: envia o flush_all pelo protocolo texto do memcached em Python
+        python -c "import socket; s = socket.create_connection(('memcached', 11211), timeout=5); s.sendall(b'flush_all\r\n'); r = s.recv(64).decode().strip(); print(r); exit(r != 'OK')"
         echo "-----------------------------------------------------"
         echo "Cache cleanup done"
         echo "-----------------------------------------------------"
