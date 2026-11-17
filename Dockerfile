@@ -10,21 +10,9 @@ ENV LANG=C.UTF-8
 
 WORKDIR /usr/src/project
 
-COPY src/tasks.py \
-    src/entrypoint.sh \
-    src/requirements.txt \
-    /usr/src/project/
-
-COPY src/wait-for-databases.sh /usr/bin/wait-for-databases
-RUN chmod +x /usr/bin/wait-for-databases
-RUN chmod +x /usr/src/project/tasks.py \
-    && chmod +x /usr/src/project/entrypoint.sh
-
-COPY src/celery.sh /usr/bin/celery-commands
-RUN chmod +x /usr/bin/celery-commands
-
-COPY src/celery-cmd /usr/bin/celery-cmd
-RUN chmod +x /usr/bin/celery-cmd
+# Só o requirements.txt antes do pip install: o restante do src/ (tasks.py, entrypoint.sh...) vem no
+# COPY src/ abaixo, sem invalidar o cache das dependências a cada mudança nos scripts.
+COPY src/requirements.txt /usr/src/project/
 
 RUN python -m pip install -U pip setuptools wheel
 RUN yes w | pip install --src /usr/src -r requirements.txt
@@ -53,20 +41,44 @@ RUN printf 'Package: postgresql-client-17 libpq5 libpq-dev\nPin: release o=apt.p
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/*
 
-COPY src/ /usr/src/project/
+# --chmod no COPY: permissão definida na própria camada, sem um RUN chmod que duplicaria os arquivos.
+COPY --chmod=755 src/wait-for-databases.sh /usr/bin/wait-for-databases
+COPY --chmod=755 src/celery.sh /usr/bin/celery-commands
+COPY --chmod=755 src/celery-cmd /usr/bin/celery-cmd
+# Sem root (qualquer UID do grupo 0, como o UID aleatório do OpenShift): o COPY preserva as permissões
+# do host, que podem não dar leitura a "outros" (ex.: entrypoint.sh 700). --chmod=755 deixa código e
+# scripts legíveis/executáveis por qualquer UID, sem escrita. O modo numérico vale igual para arquivos
+# e diretórios, então todo arquivo ganha o bit de execução (inofensivo: o diretório é somente leitura
+# em runtime); o modo simbólico (a+rX,go-w) não é aceito pelo Podman/Buildah. Evita um RUN chmod -R,
+# que duplicaria todo o src/ numa camada nova.
+COPY --chmod=755 src/ /usr/src/project/
+
+# Bytecode do projeto pré-compilado, porque em runtime o /usr/src/project é somente leitura.
+RUN python -m compileall -q /usr/src/project/geosdc
+
+# HOME no /tmp, exclusivo de cada container (tmpfs no compose): .override_env do entrypoint, fixtures
+# geradas e estado do celery beat. O que é compartilhado entre containers fica em /tmp/geonode (volume).
+# /var/log (logs do uWSGI, Celery e invoke) gravável por qualquer UID do grupo 0; tmpfs no compose.
+ENV HOME=/tmp
+RUN chgrp 0 /var/log && chmod g=u /var/log
 
 # Pontos de montagem dos volumes compartilhados com grupo 0 e g=u: num volume novo, o primeiro
 # container que o monta define, pelo copy-up, dono e permissões a partir deste diretório. O django
 # sobe antes do geoserver e também monta o data dir do GeoServer, então precisa prepará-lo.
-RUN mkdir -p /mnt/volumes/statics /geoserver_data/data /backup_restore /data &&\
-    chgrp -R 0 /mnt/volumes/statics /geoserver_data/data /backup_restore /data &&\
-    chmod -R g=u /mnt/volumes/statics /geoserver_data/data /backup_restore /data
+# /tmp/geonode: TMPDIR (temporários do Python), em disco e não no tmpfs do /tmp.
+RUN mkdir -p /mnt/volumes/statics /geoserver_data/data /backup_restore /data /tmp/geonode &&\
+    chgrp -R 0 /mnt/volumes/statics /geoserver_data/data /backup_restore /data /tmp/geonode &&\
+    chmod -R g=u /mnt/volumes/statics /geoserver_data/data /backup_restore /data /tmp/geonode
+
+# Temporários do Python (tempfile: uploads do Django, arquivos que o GeoNode gera e copia para os
+# assets/mídia) em /tmp/geonode, volume em disco compartilhado entre django e celery: não ocupam
+# memória e, copiados para os volumes, não levam o rótulo SELinux privado do tmpfs deste container.
+ENV TMPDIR=/tmp/geonode
 
 # Atalho para o manage.py dentro do container (django/celery): geosdc-cli <comando>
 # Instalado no bin do virtualenv (/usr/src/venv/bin, primeiro no PATH da imagem base).
 # Fica após o pip install para não invalidar o cache das dependências.
-COPY src/geosdc-cli /usr/src/venv/bin/geosdc-cli
-RUN chmod +x /usr/src/venv/bin/geosdc-cli
+COPY --chmod=755 src/geosdc-cli /usr/src/venv/bin/geosdc-cli
 # RUN yes w | pip install -e .
 
 EXPOSE 8000
