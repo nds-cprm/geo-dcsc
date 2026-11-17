@@ -25,8 +25,8 @@
 #   -k, --keep        mantém a stack de testes no final (para inspeção); remova depois com --down
 #       --down        derruba a stack de testes mantida (e apaga os volumes) e sai
 #   -f, --failfast    para cada grupo no primeiro teste com falha (como na CI)
-#       --lang CODE   LANGUAGE_CODE dos testes (ex.: en-us); padrão: o do .env. Vários testes do
-#                     GeoNode comparam textos em inglês e falham com o idioma pt
+#       --lang CODE   LANGUAGE_CODE dos testes (padrão: en-us, e não o do .env): vários testes do
+#                     GeoNode comparam textos em inglês e falham com o idioma pt (ex.: --lang pt)
 #       --relaxed     roda django/celery/geoserver como root e com filesystem gravável, para separar
 #                     falhas causadas pela execução sem root / somente leitura
 #   -h, --help        mostra esta ajuda
@@ -65,8 +65,8 @@ Opções:
   -h, --help        mostra esta ajuda e sai
   -l, --list        lista os grupos e sai
   -f, --failfast    para cada grupo no primeiro teste com falha (como na CI)
-      --lang CODE   LANGUAGE_CODE dos testes (ex.: en-us); padrão: o do .env
-                    (vários testes do GeoNode comparam textos em inglês)
+      --lang CODE   LANGUAGE_CODE dos testes (padrão: en-us, e não o do .env,
+                    pois vários testes do GeoNode comparam textos em inglês)
       --relaxed     django/celery/geoserver como root e com filesystem gravável,
                     para separar falhas causadas pela execução sem root / somente leitura
   -k, --keep        mantém a stack de testes no final, para inspeção
@@ -83,14 +83,15 @@ Saída:
 
 Exemplos:
   $(basename "$0") smoke
-  $(basename "$0") --lang en-us main upload
+  $(basename "$0") main upload
+  $(basename "$0") --lang pt smoke
   $(basename "$0") --failfast --keep gis_backend
   $(basename "$0") --down
 EOF
     exit "${1:-0}"
 }
 
-keep=false; down_only=false; failfast=""; lang=""; relaxed=false; groups=()
+keep=false; down_only=false; failfast=""; lang="en-us"; relaxed=false; groups=()
 while [ $# -gt 0 ]; do
     case "$1" in
         -l|--list)     printf '%s\n' "${ALL_GROUPS[@]}"; exit 0 ;;
