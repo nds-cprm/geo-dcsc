@@ -222,7 +222,8 @@ Antes, construa as imagens com `./geosdc build`.
 ./geosdc-tests --help                       # ajuda completa
 ./geosdc-tests --list                       # lista os grupos
 ./geosdc-tests smoke                        # um grupo
-./geosdc-tests --lang en-us main upload     # vários grupos, com textos em inglês
+./geosdc-tests main upload                  # vários grupos
+./geosdc-tests --lang pt smoke              # com o idioma pt (padrão: en-us)
 ./geosdc-tests                              # todos os grupos
 ```
 
@@ -240,7 +241,7 @@ Opções principais:
 
 | Opção | Efeito |
 |---|---|
-| `--lang en-us` | usa `LANGUAGE_CODE=en-us`; vários testes do GeoNode comparam textos em inglês |
+| `--lang CODE` | `LANGUAGE_CODE` dos testes; padrão `en-us` (e não o do `.env`), pois vários testes do GeoNode comparam textos em inglês |
 | `-f`, `--failfast` | para cada grupo no primeiro teste com falha |
 | `--relaxed` | roda django, celery e geoserver como root e com filesystem gravável, para separar falhas causadas pela execução sem root |
 | `-k`, `--keep` | mantém a stack de testes no final, para inspeção |
