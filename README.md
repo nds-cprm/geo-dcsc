@@ -1,264 +1,293 @@
-# GeoNode Project
+# geosdc: GeoNode da Defesa Civil de Santa Catarina
 
-GeoNode Django project. This can be forked to customize, add Python modules or Django apps to your GeoNode instance.
+Instância [GeoNode](https://geonode.org/) da **Defesa Civil de Santa Catarina**, derivada do template oficial [geonode-project](https://github.com/GeoNode/geonode-project). O projeto é um app Django (`geosdc`) que estende o GeoNode por *override*: configurações, templates, traduções pt-BR, fixtures e identidade visual do governo de SC. O pacote GeoNode instalado nunca é alterado.
 
-> [!IMPORTANT]  
-This repository has been converted from a Django project template into a concrete Django project, ready to be forked and deployed. The goal is to make it easier to track updates and pull changes from this repo into your own project.s
+## Sumário
 
-## Table of Contents
+- [Principais características](#principais-características)
+- [Arquitetura](#arquitetura)
+- [Instalação](#instalação)
+- [Operação do dia a dia](#operação-do-dia-a-dia)
+- [Backup e restore](#backup-e-restore)
+- [Testes](#testes)
+- [Desenvolvimento](#desenvolvimento)
+- [Execução sem root e com filesystem somente leitura](#execução-sem-root-e-com-filesystem-somente-leitura)
 
--  [Quick Docker Start](#quick-docker-start)
--  [Start your server using Docker](#start-your-server-using-docker)
--  [Run the instance in development mode](#run-the-instance-in-development-mode)
--  [Run the instance on a public site](#run-the-instance-on-a-public-site)
--  [Stop the Docker Images](#stop-the-docker-images)
--  [Backup and Restore from Docker Images](#backup-and-restore-the-docker-images)
--  [Recommended: Track your changes](#recommended-track-your-changes)
--  [Hints: Configuring `requirements.txt`](#hints-configuring-requirementstxt)
+## Principais características
 
-## Quick Docker Start
-To setup your project follow these instructions:
+- **GeoNode 5.0.3** (`geonode==5.0.3.post1`) com `django-geonode-mapstore-client` 5.0.3 e GeoServer 2.28. As dependências Python ficam em [src/requirements.txt](src/requirements.txt).
+- **Interface em português:** traduções pt-BR do MapStore em [src/geosdc/static/mapstore/](src/geosdc/static/mapstore/). A lista de idiomas vem da variável `LANGUAGES` do `.env`, o que contorna o bloqueio de idiomas do MapStore.
+- **Identidade visual do governo de SC:** rodapé, favicon, CSS e tema próprios em [src/geosdc/templates/](src/geosdc/templates/) e [src/geosdc/static/](src/geosdc/static/).
+- **Páginas institucionais** com `django.contrib.flatpages`, editadas no admin com CKEditor e servidas em `/pages/`.
+- **Login social com Google** via `django-allauth`. Há um rascunho comentado para OpenID Connect / gov.br em [src/geosdc/settings.py](src/geosdc/settings.py).
+- **Fixtures do projeto** (licença e regiões) em [src/geosdc/fixtures/](src/geosdc/fixtures/), carregadas no primeiro boot.
+- **Stack completa em containers** (Docker ou Podman), com overrides por ambiente: desenvolvimento, homologação e produção. Em homologação e produção o banco PostgreSQL é externo.
+- **Containers sem root e somente leitura** para django, celery e geoserver, compatíveis com UID arbitrário (OpenShift). Veja a [seção final](#execução-sem-root-e-com-filesystem-somente-leitura).
+- **Suíte de testes do GeoNode** executável numa stack descartável com o script [geosdc-tests](geosdc-tests).
 
-1. Generate the project
+## Arquitetura
 
-    ```bash
-    git clone https://github.com/GeoNode/geonode-project.git -b <your_branch>
-    cd project
-    ```
+O [docker-compose.yml](docker-compose.yml) define a stack. Todos os serviços leem o `.env`.
 
-2. Create the .env file
+| Serviço | Container | Papel |
+|---|---|---|
+| `django` | `django4geosdc` | GeoNode/geosdc servido por uWSGI (porta 8000) |
+| `celery` | `celery4geosdc` | Mesma imagem do django: workers (fila padrão e `harvesting`) e beat |
+| `geonode` | `nginx4geosdc` | Nginx: proxy reverso para django e geoserver, estáticos e mídia |
+| `geoserver` | `geoserver4geosdc` | Serviços OGC (WMS, WFS, WCS, GWC) |
+| `db` | `db4geosdc` | PostGIS com os bancos `geosdc` e `geosdc_data` (só em dev) |
+| `redis` | `redis4geosdc` | Broker e backend de resultados do Celery |
+| `memcached` | `memcached4geosdc` | Cache |
+| `letsencrypt` | `letsencrypt4geosdc` | Certificados TLS |
 
-    An `.env` file is requird to run the application. It can be created from the `.env.sample` either manually or with the create-envfile.py script.
+Os nomes dos containers seguem `<serviço>4${COMPOSE_PROJECT_NAME}`.
 
-    The script accepts several parameters to create the file, in detail:
+A imagem do django é construída pelo [Dockerfile](Dockerfile) da raiz, a partir do `geonode-base`. As imagens de nginx, geoserver, postgis e letsencrypt vêm do submódulo [docker/](docker/) ([nds-cprm/geonode-docker](https://github.com/nds-cprm/geonode-docker), branch `geosdc`). As versões das imagens base ficam no `.env`, nas variáveis `*_BASE_IMAGE_VERSION`, e também servem de tag das imagens geradas.
 
-    - *hostname*: e.g. master.demo.geonode.org, default localhost
-    - *https*: (boolean), default value is False
-    - *email*: Admin email (this is required if https is set to True since a valid email is required by Letsencrypt certbot)
-    - *env_type*: `prod`, `test` or `dev`. It will set the `DEBUG` variable to `False` (`prod`, `test`) or `True` (`dev`)
-    - *geonodepwd*: GeoNode admin password (required inside the .env)
-    - *geoserverpwd*: Geoserver admin password (required inside the .env)
-    - *pgpwd*: PostgreSQL password (required inside the .env)
-    - *dbpwd*: GeoNode DB user password (required inside the .env)
-    - *geodbpwd*: Geodatabase user password (required inside the .env)
-    - *clientid*: Oauth2 client id (required inside the .env)
-    - *clientsecret*: Oauth2 client secret (required inside the .env)
-    - *secret key*: Django secret key (required inside the .env)
-    - *sample_file*: absolute path to a env_sample file used to create the env_file. If not provided, the one inside the GeoNode project is used.
-    - *file*: absolute path to a json file that contains all the above configuration
+Overrides por ambiente, usados junto com o compose base:
 
-     **NOTE:**
-    - if the same configuration is passed in the json file and as an argument, the CLI one will overwrite the one in the JSON file
-    - If some value is not provided, a random string is used
+| Arquivo | Ambiente | Diferenças |
+|---|---|---|
+| [docker-compose-dev.yml](docker-compose-dev.yml) | desenvolvimento | publica no host as portas 8000 (django), 8080 (geoserver) e 5432 (db) |
+| [docker-compose-hml.yml](docker-compose-hml.yml) | homologação | banco externo: desliga o `db` e aponta o hostname `db` para o servidor PostgreSQL (`extra_hosts`) |
+| [docker-compose-prod.yml](docker-compose-prod.yml) | produção | idem homologação |
 
-      Example USAGE
+## Instalação
 
-      ```bash
-      python create-envfile.py -f /opt/core/geonode-project/file.json \
-        --hostname localhost \
-        --https \
-        --email random@email.com \
-        --geonodepwd gn_password \
-        --geoserverpwd gs_password \
-        --pgpwd pg_password \
-        --dbpwd db_password \
-        --geodbpwd _db_password \
-        --clientid 12345 \
-        --clientsecret abc123 
-      ```
+### Requisitos
 
-      Example JSON expected:
+- Docker com o plugin `docker compose`, ou Podman com `podman compose`.
+- Git, para clonar o projeto com o submódulo.
+- Python 3, só para gerar o `.env` com o `create-envfile.py`.
+- Em homologação e produção: um servidor PostgreSQL/PostGIS acessível pelos containers.
 
-      ```JSON
-      {
-        "hostname": "value",
-        "https": "value",
-        "email": "value",
-        "geonodepwd": "value",
-        "geoserverpwd": "value",
-        "pgpwd": "value",
-        "dbpwd": "value",
-        "geodbpwd": "value",
-        "clientid": "value",
-        "clientsecret": "value"
-      } 
-      ```
-
-### Start your server using Docker
-
-You need Docker 1.12 or higher, get the latest stable official release for your platform.
-Once you have the project configured run the following command from the root folder of the project.
-
-1. Run `docker-compose` to start it up (get a cup of coffee or tea while you wait)
-
-    ```bash
-    docker-compose build --no-cache
-    docker-compose up -d
-    ```
-
-    ```bash
-    set COMPOSE_CONVERT_WINDOWS_PATHS=1
-    ```
-
-    before running `docker-compose up`
-
-2. Access the site on http://localhost/
-
-## Run the instance on a public site
-
-### Preparation of the image (First time only)
-
-**NOTE**: In this example we are going to publish to the public IP http://123.456.789.111
+### 1. Clonar o repositório
 
 ```bash
-vim .env
-  --> replace localhost with 123.456.789.111 everywhere
+git clone --recurse-submodules https://github.com/nds-cprm/geo-dcsc.git geosdc
+cd geosdc
 ```
 
-### Startup the image
+Se o projeto já foi clonado sem o submódulo, rode `git submodule update --init`.
+
+### 2. Criar o arquivo de ambiente
+
+O `.env` é gerado a partir do [.env.sample](.env.sample). As senhas omitidas são geradas aleatoriamente.
 
 ```bash
-docker-compose up --build -d
+python create-envfile.py --hostname geo.exemplo.sc.gov.br --https --email admin@exemplo.sc.gov.br --env_type prod
 ```
 
-### Stop the Docker Images
+Opções úteis (veja `python create-envfile.py --help`):
+
+| Opção | Descrição |
+|---|---|
+| `--hostname` | nome público do servidor (padrão `localhost`) |
+| `--https` | ativa HTTPS; exige `--email`, usado pelo Let's Encrypt |
+| `--env_type` | `prod`, `test` ou `dev` (define `DEBUG`) |
+| `--geonodepwd`, `--geoserverpwd` | senhas dos administradores do GeoNode e do GeoServer |
+| `--pgpwd`, `--dbpwd`, `--geodbpwd` | senhas do PostgreSQL, do banco do GeoNode e do banco de dados geográficos |
+| `--clientid`, `--clientsecret` | credenciais OAuth2 entre GeoNode e GeoServer |
+| `-f arquivo.json` | lê os parâmetros de um JSON (a linha de comando tem prioridade) |
+
+Depois de gerar, revise o arquivo. Ajuste pelo menos:
+
+- `DOCKER_ENV`: `dev`, `hml` ou `prod`. Ele define qual override o `./geosdc` usa.
+- `LANGUAGE_CODE` e `LANGUAGES`, por exemplo `LANGUAGE_CODE=pt-br`.
+- Em homologação e produção: `DATABASE_HOST`, `DATABASE_URL` e `GEODATABASE_URL` apontando para o banco externo, e o IP do servidor em `extra_hosts` no `docker-compose-hml.yml` ou no `docker-compose-prod.yml`.
+- E-mail (`DJANGO_EMAIL_*`) e chaves de API (`GOOGLE_API_KEY` etc.).
+
+> [!WARNING]
+> O `.env` e as variantes `.env.dev`, `.env.hml` e `.env.prod` contêm credenciais. Eles estão no `.gitignore` e não devem ser commitados nem compartilhados.
+
+O `./geosdc` também aceita manter um arquivo por ambiente (`.env.dev`, `.env.hml`, `.env.prod`). Sem `.env` no diretório, ele cria o link `.env -> .env.<amb>` de acordo com o `DOCKER_ENV` do shell. Um `.env` existente nunca é alterado.
+
+### 3. Construir as imagens e subir a stack
+
+O script [geosdc](geosdc) é um atalho para `docker compose -f docker-compose.yml -f docker-compose-<amb>.yml`. Ele escolhe o override pelo `DOCKER_ENV` e usa o Docker quando o daemon responde. Se o daemon não responde, usa o Podman. Para forçar o engine, defina `CONTAINER_ENGINE=docker` ou `CONTAINER_ENGINE=podman`.
 
 ```bash
-docker-compose stop
+./geosdc build
+./geosdc up -d
+./geosdc logs -f django
 ```
 
-### Fully Wipe-out the Docker Images
+O primeiro boot demora alguns minutos. Nele o container django:
 
-**WARNING**: This will wipe out all the repositories created until now.
+1. calcula as URLs e as configurações derivadas do `.env`;
+2. aplica as migrações dos bancos `default` e `datastore`;
+3. carrega as fixtures, inclusive as do projeto, e cria o administrador;
+4. coleta os estáticos e inicia o uWSGI.
 
-**NOTE**: The images must be stopped first
+O GeoServer popula o próprio data dir no primeiro boot.
+
+Ao final, acesse `https://<hostname>/` (ou `http://localhost/` em dev) e entre com `ADMIN_USERNAME`/`ADMIN_PASSWORD` do `.env`. O GeoServer fica em `/geoserver/`.
+
+As fixtures e o administrador só são carregados enquanto não existir o arquivo `/mnt/volumes/statics/geonode_init.lock`. Para recarregá-los, defina `FORCE_REINIT=true` no `.env` e reinicie o django. Depois, volte a variável para `false`.
+
+### Atualizações
 
 ```bash
-docker system prune -a
+git pull
+git submodule update --init      # atualiza o submódulo para o ponteiro commitado
+./geosdc build
+./geosdc up -d
 ```
 
-## Backup and Restore from Docker Images
+As migrações rodam automaticamente na subida do django. Mudanças no `requirements.txt` exigem rebuild da imagem.
 
-### Run a Backup
+## Operação do dia a dia
 
 ```bash
-SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./project/br/backup.sh $BKP_FOLDER_NAME
+./geosdc ps                                  # estado dos serviços
+./geosdc logs -f django celery               # logs
+./geosdc restart django                      # reinicia um serviço
+./geosdc stop                                # para a stack, sem remover nada
+./geosdc down                                # remove os containers e mantém os volumes
+
+# manage.py dentro do container (o geosdc-cli carrega o ambiente calculado no boot)
+./geosdc exec django geosdc-cli showmigrations
+./geosdc exec django geosdc-cli shell
+./geosdc exec -T django geosdc-cli dumpdata people.Profile --indent 2 > profiles.json   # -T em pipes e redirecionamentos
 ```
 
-- BKP_FOLDER_NAME:
-  Default value = backup_restore
-  Shared Backup Folder name.
-  The scripts assume it is located on "root" e.g.: /$BKP_FOLDER_NAME/
+> [!CAUTION]
+> `./geosdc down -v` apaga os volumes: banco de dev, data dir do GeoServer, mídia e backups.
 
-- SOURCE_URL:
-  Source Server URL, the one generating the "backup" file.
+## Backup e restore
 
-- TARGET_URL:
-  Target Server URL, the one which must be synched.
+Os scripts ficam em [src/geosdc/br/](src/geosdc/br/) e usam os comandos `backup` e `restore` do GeoNode. A configuração do que entra no backup está em [settings_docker.ini](src/geosdc/br/settings_docker.ini). Os arquivos são gravados no volume `backup-restore`, montado em `/backup_restore` nos containers django e geoserver.
 
-e.g.:
+O backup inclui os dados do GeoNode (fixtures dos apps), a mídia e os assets, o data dir do GeoServer e os dados geográficos do banco `geosdc_data`.
+
+### Gerar um backup
 
 ```bash
-docker exec -it django4project sh -c 'SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./project/br/backup.sh $BKP_FOLDER_NAME'
+./geosdc exec django sh /usr/src/project/geosdc/br/backup.sh
 ```
 
-### Run a Restore
+O script cria em `/backup_restore/` um `.zip` e o `.md5` correspondente, e mostra o checksum no final. Para usar outra pasta, passe o nome dela como argumento. O caminho é relativo à raiz do container, e o padrão é `backup_restore`.
+
+Para copiar o backup para fora do servidor:
 
 ```bash
-SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./project/br/restore.sh $BKP_FOLDER_NAME
+./geosdc exec django ls -lt /backup_restore/
+./geosdc cp django:/backup_restore/<arquivo>.zip ./
+./geosdc cp django:/backup_restore/<arquivo>.md5 ./
 ```
 
-- BKP_FOLDER_NAME:
-  Default value = backup_restore
-  Shared Backup Folder name.
-  The scripts assume it is located on "root" e.g.: /$BKP_FOLDER_NAME/
+### Restaurar um backup
 
-- SOURCE_URL:
-  Source Server URL, the one generating the "backup" file.
+O `restore.sh` restaura o backup **mais recente** em `/backup_restore/` e precisa de duas variáveis:
 
-- TARGET_URL:
-  Target Server URL, the one which must be synched.
-
-e.g.:
+- `SOURCE_URL`: endereço do servidor que gerou o backup (ex.: `geo.sdc.sc.gov.br`);
+- `TARGET_URL`: endereço do servidor que recebe o restore. O script troca as URLs do servidor de origem por este endereço.
 
 ```bash
-docker exec -it django4project sh -c 'SOURCE_URL=$SOURCE_URL TARGET_URL=$TARGET_URL ./project/br/restore.sh $BKP_FOLDER_NAME'
+# 1. Coloque o .zip e o .md5 do backup no volume (se vierem de outro servidor)
+./geosdc cp ./<arquivo>.zip django:/backup_restore/
+./geosdc cp ./<arquivo>.md5 django:/backup_restore/
+
+# 2. Rode o restore
+./geosdc exec -e SOURCE_URL=geo.origem.sc.gov.br -e TARGET_URL=geo.destino.sc.gov.br \
+    django sh /usr/src/project/geosdc/br/restore.sh
 ```
 
-## Recommended: Track your changes
+O restore executa estas etapas:
 
-Step 1. Install Git (for Linux, Mac or Windows).
+1. faz um backup de segurança da instância atual em `/backup_restore/<uuid>/` e confere o checksum;
+2. confere o `.md5` do backup a restaurar e executa o `restore` do GeoNode;
+3. troca as URLs (`migrate_baseurl`), recria as tile layers do GWC e atualiza os metadados das camadas;
+4. corrige as referências de workspace nos estilos do GeoServer e recarrega o catálogo;
+5. limpa o memcached.
 
-Step 2. Init git locally and do the first commit:
+Se algo der errado, o backup de segurança do passo 1 permite voltar ao estado anterior.
+
+> [!NOTE]
+> Limitações conhecidas, ainda em aberto:
+> - no GeoNode 5.0.3, o restore pode falhar na fixture `upload` com `IntegrityError`, porque o app `resource` não entra no backup. Com o `set -e`, os passos 3 a 5 não rodam e precisam ser executados manualmente;
+> - a imagem do django não tem `nc`, então a limpeza do memcached falha. Reinicie o serviço com `./geosdc restart memcached`;
+> - depois do backup ou do restore, o GeoWebCache pode ficar sem catálogo de tile layers. Nesse caso, reinicie o GeoServer.
+
+### Backup do banco em homologação e produção
+
+Em homologação e produção o PostgreSQL é externo, e o backup do banco como um todo (`pg_dump`, snapshots) é responsabilidade da administração desse servidor. O backup do GeoNode descrito acima não substitui esse backup.
+
+## Testes
+
+O projeto não tem testes próprios. O script [geosdc-tests](geosdc-tests) executa a suíte automatizada do **GeoNode** contra as imagens do projeto, dividida em grupos como na CI do GeoNode 5.0.x. Ele sobe uma stack descartável e isolada, chamada `<COMPOSE_PROJECT_NAME>test`, sem nginx e sem portas publicadas. A stack de trabalho não é afetada.
+
+Antes, construa as imagens com `./geosdc build`.
 
 ```bash
-git init
-git add *
-git commit -m "Initial Commit"
+./geosdc-tests --help                       # ajuda completa
+./geosdc-tests --list                       # lista os grupos
+./geosdc-tests smoke                        # um grupo
+./geosdc-tests --lang en-us main upload     # vários grupos, com textos em inglês
+./geosdc-tests                              # todos os grupos
 ```
 
-Step 3. Set up a free account on github or bitbucket and make a copy of the repo there.
+| Grupo | Conteúdo |
+|---|---|
+| `smoke` | testes rápidos: smoke, REST API, busca, utilitários, cabeçalhos |
+| `main` | testes dos apps do GeoNode (exceto security, geoserver e upload) |
+| `security` | permissões e segurança |
+| `gis_backend` | integração com o GeoServer |
+| `rest_apis` | APIs REST (api, base, layers, maps, documents, geoapps) |
+| `csw` | catálogo CSW |
+| `upload` | importação de dados |
 
-## Hints: Configuring `requirements.txt`
+Opções principais:
 
-You may want to configure your requirements.txt, if you are using additional or custom versions of python packages. For example
+| Opção | Efeito |
+|---|---|
+| `--lang en-us` | usa `LANGUAGE_CODE=en-us`; vários testes do GeoNode comparam textos em inglês |
+| `-f`, `--failfast` | para cada grupo no primeiro teste com falha |
+| `--relaxed` | roda django, celery e geoserver como root e com filesystem gravável, para separar falhas causadas pela execução sem root |
+| `-k`, `--keep` | mantém a stack de testes no final, para inspeção |
+| `--down` | remove uma stack de testes mantida, com os volumes |
 
-```python
-Django==3.2.16
-git+git://github.com/<your organization>/geonode.git@<your branch>
-```
+Os logs ficam em `~/.cache/geosdc-tests/logs/<data-hora>/`: um `<grupo>.log` por grupo e o `compose-up.log` da subida. O código de saída é 0 só se todos os grupos passarem. A variável `BOOT_TIMEOUT` (padrão 3600 s) limita a espera pela subida da stack.
 
-## Increasing PostgreSQL Max connections
-
-In case you need to increase the PostgreSQL Max Connections , you can modify
-the **POSTGRESQL_MAX_CONNECTIONS** variable in **.env** file as below:
-
-```
-POSTGRESQL_MAX_CONNECTIONS=200
-```
-
-In this case PostgreSQL will run accepting 200 maximum connections.
-
-## Developing with Dev Containers in VS Code
-
-This repo includes a .devcontainer folder with the condigurations to run Django and Celery inside a VS Code Dev Container.
-A `docker.sh` script aliases the `docker compose` command with the pre-configured arguments to use the customized compose files.
-
-You can run the Dev Container with the following commands:
+### Lint
 
 ```bash
-cd .devcontainer
-chmod +x docker.sh
-./docker.sh build
-.docker.sh up -d
+flake8 src/      # configuração em .flake8 (max-line-length 200)
 ```
 
-The Django and the Celery containers will be started **without** running the Django and Celery processes. They can be started manually inside the dev container. The container is autopopulated with VS Code development extensions for Python and a list of pre-configured luanch configurations (for Django and Celery).
+## Desenvolvimento
 
-Within VS Code open the command palette with `Ctrl+P` and run `Dev Container: Reopen in Container`. VS Code will recognize the presence of the two dev container, and will allow to reopen the current window inside the container's workspace.
-Wait a few seconds to let VS Code setup the dev extensions, then you should see the launch configurations.
+- Use `DOCKER_ENV=dev`. O django fica em `http://localhost:8000`, o GeoServer em `http://localhost:8080/geoserver` e o PostGIS em `localhost:5432`.
+- **Hot reload:** descomente o bind `./src:/usr/src/project` no `x-common-django` do [docker-compose.yml](docker-compose.yml). O uWSGI recarrega ao tocar em `src/geosdc/wsgi.py`. O `py-autoreload` do [src/uwsgi.ini](src/uwsgi.ini) também funciona, mas não deve ficar ativo em produção.
+- **Personalizações** sempre por override em [src/geosdc/](src/geosdc/):
+  - `settings.py`: configurações;
+  - `templates/`: templates;
+  - `static/`: CSS, imagens e traduções;
+  - `fixtures/`: um novo `.json` nessa pasta é carregado no primeiro boot ou com `FORCE_REINIT=true`.
+- **Atualização do GeoNode:** acompanhe as tags `5.0.x` do [geonode-project](https://github.com/GeoNode/geonode-project) e porte as diferenças manualmente (`git diff <tag_atual> <tag_nova>` no upstream).
+- **Submódulo `docker/`:** para trazer as novidades do branch `geosdc`, rode `git submodule update --remote docker` e commite o novo ponteiro.
+- Comentários, commits e documentação do projeto são em português.
 
-To simplify the debugging of GeoNode and the GeoNode client, these modules can be installed as editable (PEP-660) with the following commands:
+## Execução sem root e com filesystem somente leitura
 
-```bash
-pip install -e git+https://github.com/GeoNode/geonode.git@master#egg=geonode --src=/usr/src
-pip install -e git+https://github.com/GeoNode/geonode-mapstore-client.git@master#egg=django_geonode_mapstore_client --src=/usr/src
-```
+Os containers `django`, `celery` e `geoserver` rodam sem root (`user: "1001:0"` no [docker-compose.yml](docker-compose.yml)) e com `read_only: true`. Qualquer UID do grupo 0 funciona, como o UID aleatório do OpenShift. Graváveis ficam só os volumes e os tmpfs.
 
-The modules will be isntalled under `/usr/src` and so at te root of the VS Code workspace.
-Notice that at the time of writing Pylance can't resolve PEP-660 editable installs. For this reason the `.vscode/settings.py` contain extrPaths for the modules.
+| Caminho | Tipo | Uso |
+|---|---|---|
+| `/tmp` | tmpfs, exclusivo de cada container | `HOME` (`.override_env` do entrypoint), fixtures geradas no boot, estado e pid do Celery beat; no GeoServer, também o log da JVM |
+| `/tmp/geonode` | volume `tmp`, compartilhado entre django e celery | `TMPDIR` da imagem: temporários do Python, incluindo os dos uploads do Django, em disco para não ocupar memória |
+| `/var/log` | tmpfs (django/celery) | logs do uWSGI, Celery e invoke |
+| `/usr/local/tomcat/{logs,temp,work}` | tmpfs (geoserver) | diretórios de trabalho do Tomcat |
+| `/mnt/volumes/statics`, `/geoserver_data/data`, `/backup_restore`, `/data` | volumes compartilhados | estáticos, mídia e assets, data dir do GeoServer, backups |
 
-### Running Django
-The `GeoNode` launch configuration for Django sets the `ASYNC_SIGNALS` env variable to False. This way GeoNode can be developed and debugged in sync mode, without Celery.
-If you want to test Django in async mode, you can switch this variable to `True` and tun Celery (see below).
+Convenções nas imagens:
 
-Running the Debug sessions for Django will start Django with its internal development server.
+- **Grupo 0 com `g=u`:** os pontos de montagem são criados no build com grupo 0 e permissão de grupo igual à do dono. Num volume novo, o primeiro container que o monta define dono e permissões a partir desse diretório (copy-up).
+- **`umask 0002`:** nos entrypoints, no `geosdc-cli` e no Tomcat (`UMASK=0002`). Assim, os arquivos criados nos volumes compartilhados já nascem com escrita do grupo 0, e os outros containers continuam gravando neles.
+- **Código somente leitura:** o `COPY src/` preserva as permissões do host. Por isso o Dockerfile aplica `chmod -R a+rX,go-w` em `/usr/src/project`, para o código ser legível e os scripts executáveis por qualquer UID, sem escrita.
+- **`python -m compileall`:** gera no build os `.pyc` do app `geosdc` (o GeoNode e as dependências já vêm compilados pelo `pip install`). Em runtime o `/usr/src/project` é somente leitura, e o Python não consegue gravar o `__pycache__`. Ele não falha por isso, mas recompila o código em memória a cada processo, e o uWSGI e o Celery sobem e reciclam vários workers. O `.dockerignore` exclui os `__pycache__` do host, então a imagem só leva os `.pyc` gerados no build.
+- **Sem cron do sistema:** o `service cron` exigia root e só tinha os jobs do `e2scrub`. As tarefas periódicas ficam no cron do uWSGI ([src/uwsgi.ini](src/uwsgi.ini)) e no Celery beat.
 
-### Running Celery
-Celery exectutions requires luanching three Debug processes:
+Para rodar os testes do GeoNode nesse modo, use o `./geosdc-tests` (veja [Testes](#testes)). A opção `--relaxed` roda como root e com filesystem gravável, para comparar.
 
- - `Celery Worker`: the generic worker process
- - `Celery Beat`: the scheduler
- - `Celery Harvesters`: The worker dedicated to the harvesters
-
-You can also remove the `-X harvesting` argument inside the Celery Worker launch configuration to have also the harvesters running in the same worker. this way you don't need to run the Beat and the Celery Harvesters processes.
+Os containers são pensados para subir do zero. Volumes criados antes dessa configuração, com arquivos de root sem escrita do grupo, precisam de um `chgrp -R 0` e de um `chmod -R g=u` uma única vez, ou precisam ser recriados.
