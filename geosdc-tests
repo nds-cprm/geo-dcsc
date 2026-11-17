@@ -34,6 +34,7 @@
 # Variáveis:
 #   CONTAINER_ENGINE=docker|podman   força o engine (padrão: Docker se o daemon responder, senão Podman)
 #   BOOT_TIMEOUT=<segundos>          espera máxima pelo django/geoserver saudáveis (padrão: 3600)
+#   MAX_FAILED_LIST=<n>              testes com falha listados por grupo no resumo (padrão: 20)
 #
 # Os logs de cada grupo ficam em ~/.cache/geosdc-tests/logs/<data-hora>/<grupo>.log. O código de
 # saída é 0 só se todos os grupos passarem.
@@ -74,6 +75,7 @@ Opções:
 Variáveis:
   CONTAINER_ENGINE=docker|podman   força o engine (padrão: Docker se responder, senão Podman)
   BOOT_TIMEOUT=<segundos>          espera máxima pelo django/geoserver saudáveis (padrão: 3600)
+  MAX_FAILED_LIST=<n>              testes com falha listados por grupo no resumo (padrão: 20)
 
 Saída:
   logs em ~/.cache/geosdc-tests/logs/<data-hora>/: <grupo>.log para cada grupo e
@@ -287,6 +289,7 @@ labels_for() {
 
 declare -a summary=()
 overall=0
+max_failed_list="${MAX_FAILED_LIST:-20}"
 
 for g in "${groups[@]}"; do
     start=$(date +%s)
@@ -306,15 +309,25 @@ EOF
     rc=$?
     set -e
     mins=$(( ($(date +%s) - start) / 60 ))
-    result="$(grep -E '^(Ran [0-9]+ tests? in|OK|FAILED|ERRO)' "$log_dir/$g.log" | tr '\n' ' ' | sed 's/ *$//')"
+    # Resultado do unittest ("Ran N tests in Xs" + "OK"/"FAILED (...)") ou o erro do próprio script,
+    # numa linha; os testes com falha vão abaixo, um por linha
+    result="$(grep -E '^Ran [0-9]+ tests? in |^(OK|FAILED)( \(.*\))?$|^ERRO: ' "$log_dir/$g.log" \
+        | awk 'NR > 1 { printf ", " } { printf "%s", $0 }' || true)"
     [ "$rc" -eq 0 ] || overall=1
-    line="$(printf '%-12s %s  %3d min  %s' "$g" "$([ "$rc" -eq 0 ] && echo 'PASSOU' || echo "FALHOU (rc=$rc)")" "$mins" "${result:-sem resumo; veja o log}")"
+    line="$(printf '%-12s %-14s %3d min  %s' "$g" "$([ "$rc" -eq 0 ] && echo 'PASSOU' || echo "FALHOU (rc=$rc)")" "$mins" "${result:-sem resumo; veja o log}")"
+    # "ERROR: test_x (geonode.app.tests.Classe.test_x)" -> "ERROR geonode.app.tests.Classe.test_x"
+    failed="$(grep -E '^(FAIL|ERROR): ' "$log_dir/$g.log" | sed -E 's/^(FAIL|ERROR): [^ ]+ \((.*)\)$/\1 \2/' || true)"
+    if [ -n "$failed" ]; then
+        n_failed=$(printf '%s\n' "$failed" | wc -l | tr -d ' ')
+        line+=$'\n'"$(printf '%s\n' "$failed" | head -n "$max_failed_list" | sed 's/^/      /')"
+        [ "$n_failed" -le "$max_failed_list" ] || line+=$'\n'"      ... e mais $((n_failed - max_failed_list)); veja $g.log"
+    fi
     summary+=("$line")
     echo ">> $line" >&2
 done
 
 echo
 echo "Resumo ($project, logs em $log_dir):"
-printf '  %s\n' "${summary[@]}"
+for line in "${summary[@]}"; do printf '  %s\n' "$line"; done
 $keep && echo ">> Stack mantida. Para remover: ./geosdc-tests --down" >&2
 exit "$overall"
