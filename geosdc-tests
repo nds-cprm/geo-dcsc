@@ -29,12 +29,26 @@
 #                     GeoNode comparam textos em inglês e falham com o idioma pt (ex.: --lang pt)
 #       --relaxed     roda django/celery/geoserver como root e com filesystem gravável, para separar
 #                     falhas causadas pela execução sem root / somente leitura
+#       --no-data     não monta os dados de teste do GeoNode (ver abaixo)
 #   -h, --help        mostra esta ajuda
+#
+# Dados de teste: o wheel do GeoNode no PyPI não traz os arquivos de dados dos testes (fixtures de
+# upload, shapefiles, SLDs, imagens esperadas dos thumbnails etc.). Antes de subir a stack, o script
+# baixa o código-fonte da tag correspondente à versão instalada na imagem (5.0.3.post1 -> tag 5.0.3),
+# guarda em ~/.cache/geosdc-tests/src/ e o monta (somente leitura) em django e celery, sobre o pacote
+# instalado e em /usr/src/geonode, que vira o diretório de trabalho dos testes (vários usam caminhos
+# relativos, como "geonode/base/fixtures/..."). Os .py da tag são idênticos aos do wheel; o fonte só
+# acrescenta os dados.
+#
+# Como no .env_test da CI do GeoNode, a stack de testes roda com SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=True
+# (necessário para os testes do provider geonode_openid_connect), independente do .env.
 #
 # Variáveis:
 #   CONTAINER_ENGINE=docker|podman   força o engine (padrão: Docker se o daemon responder, senão Podman)
 #   BOOT_TIMEOUT=<segundos>          espera máxima pelo django/geoserver saudáveis (padrão: 3600)
 #   MAX_FAILED_LIST=<n>              testes com falha listados por grupo no resumo (padrão: 20)
+#   GEONODE_SRC_REF=<tag|branch>     ref do GeoNode de onde vêm os dados de teste (padrão: a tag
+#                                    da versão instalada na imagem)
 #
 # Os logs de cada grupo ficam em ~/.cache/geosdc-tests/logs/<data-hora>/<grupo>.log. O código de
 # saída é 0 só se todos os grupos passarem.
@@ -69,13 +83,17 @@ Opções:
                     pois vários testes do GeoNode comparam textos em inglês)
       --relaxed     django/celery/geoserver como root e com filesystem gravável,
                     para separar falhas causadas pela execução sem root / somente leitura
-  -k, --keep        mantém a stack de testes no final, para inspeção
+      --no-data     não baixa nem monta os dados de teste do GeoNode (código-fonte da
+                    tag da versão instalada, em cache em ~/.cache/geosdc-tests/src/)
+  -k, --keep       mantém a stack de testes no final, para inspeção
       --down        remove a stack de testes mantida (com os volumes) e sai
 
 Variáveis:
   CONTAINER_ENGINE=docker|podman   força o engine (padrão: Docker se responder, senão Podman)
   BOOT_TIMEOUT=<segundos>          espera máxima pelo django/geoserver saudáveis (padrão: 3600)
   MAX_FAILED_LIST=<n>              testes com falha listados por grupo no resumo (padrão: 20)
+  GEONODE_SRC_REF=<tag|branch>     ref do GeoNode dos dados de teste (padrão: tag da versão
+                                   instalada na imagem, ex.: 5.0.3.post1 -> 5.0.3)
 
 Saída:
   logs em ~/.cache/geosdc-tests/logs/<data-hora>/: <grupo>.log para cada grupo e
@@ -91,7 +109,7 @@ EOF
     exit "${1:-0}"
 }
 
-keep=false; down_only=false; failfast=""; lang="en-us"; relaxed=false; groups=()
+keep=false; down_only=false; failfast=""; lang="en-us"; relaxed=false; test_data=true; groups=()
 while [ $# -gt 0 ]; do
     case "$1" in
         -l|--list)     printf '%s\n' "${ALL_GROUPS[@]}"; exit 0 ;;
@@ -101,6 +119,7 @@ while [ $# -gt 0 ]; do
         --lang)        [ $# -ge 2 ] || { echo "--lang exige um valor (ex.: en-us)" >&2; exit 1; }; lang="$2"; shift ;;
         --lang=*)      lang="${1#--lang=}" ;;
         --relaxed)     relaxed=true ;;
+        --no-data)     test_data=false ;;
         -h|--help)     usage 0 ;;
         -*)            echo "Opção desconhecida: $1" >&2; usage 1 ;;
         *)             groups+=("$1") ;;
@@ -193,6 +212,11 @@ if [ -n "$lang" ]; then
     sed -i.bak -E "s/^LANGUAGE_CODE=.*/LANGUAGE_CODE=$lang/" "$env_copy" && rm -f "$env_copy.bak"
     grep -q '^LANGUAGE_CODE=' "$env_copy" || echo "LANGUAGE_CODE=$lang" >> "$env_copy"
 fi
+# Provider OIDC do GeoNode ativo, como no .env_test da CI: sem ele o app geonode_openid_connect fica
+# fora do INSTALLED_APPS e os testes do provider falham no setUp (o @override_settings dos testes não
+# altera o INSTALLED_APPS). Só na stack de testes; no ambiente real continua valendo o .env
+sed -i.bak -E '/^SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=/d' "$env_copy" && rm -f "$env_copy.bak"
+echo "SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=True" >> "$env_copy"
 umask 022
 
 # Imagens do ambiente (o compose montaria os nomes com o projeto de testes)
@@ -202,6 +226,31 @@ img_postgis="$base_project/postgis:$(env_get POSTGRES_BASE_IMAGE_VERSION)-$(env_
 for img in "$img_geonode" "$img_geoserver" "$img_postgis"; do
     "$engine" image inspect "$img" >/dev/null 2>&1 || { echo "Imagem $img não encontrada: rode './geosdc build' antes" >&2; exit 1; }
 done
+
+# --- Dados de teste do GeoNode (código-fonte da tag da versão instalada, em cache) -------------------
+# O wheel do PyPI não traz os arquivos de dados dos testes; o fonte da tag tem os mesmos .py e os dados
+src_mount=/usr/src/geonode
+if $test_data; then
+    # Versão e local do pacote instalado na imagem (ex.: "5.0.3.post1 /usr/src/venv/.../geonode")
+    read -r gn_version gn_pkg_dir < <("$engine" run --rm --entrypoint python "$img_geonode" -c \
+        'import importlib.metadata as m, os, geonode; print(m.version("geonode"), os.path.dirname(geonode.__file__))' 2>/dev/null) \
+        || { echo "Não foi possível ler a versão do GeoNode na imagem $img_geonode" >&2; exit 1; }
+    src_ref="${GEONODE_SRC_REF:-${gn_version%%.post*}}"
+    src_dir="$state_dir/src/geonode-${src_ref//\//_}"
+    if [ ! -f "$src_dir/geonode/__init__.py" ]; then
+        echo ">> Baixando os dados de teste do GeoNode (código-fonte da ref $src_ref)" >&2
+        mkdir -p "$state_dir/src"
+        src_tmp="$(mktemp -d "$state_dir/src/.download.XXXXXX")"
+        if ! curl -fsSL "https://codeload.github.com/GeoNode/geonode/tar.gz/$src_ref" | tar -xz -C "$src_tmp" --strip-components=1 \
+            || [ ! -f "$src_tmp/geonode/__init__.py" ]; then
+            rm -rf "$src_tmp"
+            echo "Falha ao baixar o GeoNode $src_ref do GitHub (defina GEONODE_SRC_REF ou use --no-data)" >&2
+            exit 1
+        fi
+        rm -rf "$src_dir"; mv "$src_tmp" "$src_dir"
+    fi
+    echo ">> Dados de teste: GeoNode $src_ref (instalado: $gn_version) em $src_dir" >&2
+fi
 
 {
     echo "# Gerado por geosdc-tests: stack de testes descartável"
@@ -214,6 +263,11 @@ done
         if $relaxed && [ "$svc" != db ]; then
             echo "    user: \"0:0\""
             echo "    read_only: false"
+        fi
+        if $test_data && { [ "$svc" = django ] || [ "$svc" = celery ]; }; then
+            echo "    volumes:"
+            echo "      - \"$src_dir:$src_mount:ro\""
+            echo "      - \"$src_dir/geonode:$gn_pkg_dir:ro\""
         fi
     done
 } > "$override"
@@ -305,7 +359,10 @@ cd /usr/src/project
 T="$(labels_for "$g")"
 [ -n "\$(echo \$T | tr -d ' ')" ] || { echo "ERRO: lista de testes vazia para o grupo $g"; exit 2; }
 echo "LABELS: \$T"
-python manage.py test -v 2 --keepdb --noinput $failfast \$T
+# Com os dados de teste, roda a partir da raiz do fonte do GeoNode (como na CI), pois vários testes
+# usam caminhos relativos a ela; o manage.py continua sendo o do projeto
+$($test_data && echo "cd $src_mount")
+python /usr/src/project/manage.py test -v 2 --keepdb --noinput $failfast \$T
 EOF
     rc=$?
     set -e

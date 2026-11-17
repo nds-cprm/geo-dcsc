@@ -203,10 +203,8 @@ O restore executa estas etapas:
 Se algo der errado, o backup de segurança do passo 1 permite voltar ao estado anterior.
 
 > [!NOTE]
-> Limitações conhecidas, ainda em aberto:
-> - no GeoNode 5.0.3, o restore pode falhar na fixture `upload` com `IntegrityError`, porque o app `resource` não entra no backup. Com o `set -e`, os passos 3 a 5 não rodam e precisam ser executados manualmente;
-> - a imagem do django não tem `nc`, então a limpeza do memcached falha. Reinicie o serviço com `./geosdc restart memcached`;
-> - depois do backup ou do restore, o GeoWebCache pode ficar sem catálogo de tile layers. Nesse caso, reinicie o GeoServer.
+> - o app `resource` entra no backup (`fixtures/resource.json`), porque a fixture `upload` depende dele. O modelo do GeoNode 5.0.3 não o inclui. Backups gerados antes dessa mudança não têm o arquivo, e o restore deles para com `No fixture named 'resource' found`. Para restaurar um desses, crie um `resource.json` contendo só `[]` na pasta `fixtures` do zip e gere o `.md5` de novo;
+> - limitação em aberto: depois do backup ou do restore, o GeoWebCache pode ficar sem catálogo de tile layers, e o `create_tile_layers` do passo 3 acusa erro. Nesse caso, reinicie o GeoServer e rode `./geosdc exec django geosdc-cli create_tile_layers -f`.
 
 ### Backup do banco em homologação e produção
 
