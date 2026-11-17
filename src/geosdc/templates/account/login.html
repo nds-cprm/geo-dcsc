@@ -1,0 +1,53 @@
+{% extends "account/base.html" %}
+{% comment %}
+  Override do account/login.html do GeoNode 5.0.3: os links de cadastro só aparecem com
+  ACCOUNT_OPEN_SIGNUP=True (com o cadastro fechado, toda conta é criada por um administrador).
+{% endcomment %}
+
+{% load i18n %}
+{% load bootstrap_tags %}
+{% load account socialaccount %}
+
+{% block head_title %}{% trans "Log in" %}{% endblock %}
+
+{% block body_outer %}
+  <div class="page-header">
+    <h2>{% trans "Log in to an existing account" %}</h2>
+  </div>
+
+<div class="row">
+  <div class="col-md-8">
+
+    {% get_providers as socialaccount_providers %}
+
+    {% if socialaccount_providers %}
+      {% if ACCOUNT_OPEN_SIGNUP %}
+      <p>{% blocktrans with site.name as site_name %}Please sign in with one
+      of your existing third party accounts. Or, <a href="{{ signup_url }}">sign up</a>
+      for a {{ site_name }} account and sign in below:{% endblocktrans %}</p>
+      {% endif %}
+      <div class="socialaccount_ballot">
+        <ul class="socialaccount_providers">
+          {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+        </ul>
+
+        <div class="login-or">{% trans 'or' %}</div>
+      </div>
+
+      {% include "socialaccount/snippets/login_extra.html" %}
+
+    {% elif ACCOUNT_OPEN_SIGNUP %}
+      <p>{% blocktrans %}If you have not created an account yet, then please
+      <a href="{{ signup_url }}">sign up</a> first.{% endblocktrans %}</p>
+    {% endif %}
+    <form role="form" method="POST" action="{% url 'account_login' %}" autocapitalize="off" {% if form.is_multipart %} enctype="multipart/form-data"{% endif %}>
+      {% csrf_token %}
+      {{ form|as_bootstrap }}
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+      {% endif %}
+      <button class="btn btn-primary" type="submit">{% trans "Sign In" %}</button>
+    </form>
+  </div>
+</div>
+{% endblock body_outer %}

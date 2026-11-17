@@ -90,6 +90,11 @@ INSTALLED_APPS += (
     # 'allauth.socialaccount.providers.openid_connect',
 )
 
+# Cadastro: com ACCOUNT_OPEN_SIGNUP=False (env), nem convites abrem o cadastro (ver geosdc/adapters.py).
+# O login social segue o ACCOUNT_OPEN_SOCIALSIGNUP (env), pelo adaptador social do GeoNode.
+ACCOUNT_ADAPTER = "geosdc.adapters.AccountAdapter"
+INVITATIONS_ADAPTER = ACCOUNT_ADAPTER
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': [
