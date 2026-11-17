@@ -1,0 +1,320 @@
+#!/usr/bin/env bash
+# Executa a suíte de testes automatizados do GeoNode numa stack descartável, separada por grupos
+# como na CI do GeoNode 5.0.x (.github/workflows/tests.yml do upstream).
+#
+# A stack de testes é isolada da stack do ambiente: usa o projeto compose "<COMPOSE_PROJECT_NAME>test",
+# com containers, rede e volumes próprios, e sobe só db, redis, memcached, django, celery e geoserver
+# (sem nginx e sem portas publicadas). As imagens são as já construídas pelo "./geosdc build". Os
+# containers rodam como na stack real (sem root e com filesystem somente leitura), salvo com --relaxed.
+#
+# Grupos (iguais aos da CI do GeoNode):
+#   smoke        geonode.tests.smoke, test_rest_api, test_search, test_utils, test_headers
+#   main         <app>.tests de todos os GEONODE_APPS, exceto security, geoserver e upload,
+#                mais thumbs, people e o provider geonode_openid_connect
+#   security     <app>.tests dos GEONODE_APPS com "security"
+#   gis_backend  <app>.tests dos GEONODE_APPS com "geoserver"
+#   rest_apis    testes das APIs REST (api, base, layers, maps, documents, geoapps)
+#   csw          geonode.tests.csw e geonode.catalogue.backends.tests
+#   upload       geonode.upload
+#
+# Uso:
+#   ./geosdc-tests [opções] [grupo...]        (sem grupos: todos, na ordem acima)
+#
+# Opções:
+#   -l, --list        lista os grupos e sai
+#   -k, --keep        mantém a stack de testes no final (para inspeção); remova depois com --down
+#       --down        derruba a stack de testes mantida (e apaga os volumes) e sai
+#   -f, --failfast    para cada grupo no primeiro teste com falha (como na CI)
+#       --lang CODE   LANGUAGE_CODE dos testes (ex.: en-us); padrão: o do .env. Vários testes do
+#                     GeoNode comparam textos em inglês e falham com o idioma pt
+#       --relaxed     roda django/celery/geoserver como root e com filesystem gravável, para separar
+#                     falhas causadas pela execução sem root / somente leitura
+#   -h, --help        mostra esta ajuda
+#
+# Variáveis:
+#   CONTAINER_ENGINE=docker|podman   força o engine (padrão: Docker se o daemon responder, senão Podman)
+#   BOOT_TIMEOUT=<segundos>          espera máxima pelo django/geoserver saudáveis (padrão: 3600)
+#
+# Os logs de cada grupo ficam em ~/.cache/geosdc-tests/logs/<data-hora>/<grupo>.log. O código de
+# saída é 0 só se todos os grupos passarem.
+
+set -euo pipefail
+
+ALL_GROUPS=(smoke main security gis_backend rest_apis csw upload)
+
+usage() {
+    cat <<EOF
+Uso: $(basename "$0") [opções] [grupo...]
+
+Executa os testes automatizados do GeoNode, por grupo (como na CI do GeoNode 5.0.x), numa stack
+descartável e isolada (projeto "<COMPOSE_PROJECT_NAME>test", sem nginx e sem portas publicadas),
+com as imagens já construídas por "./geosdc build". Sem grupos, roda todos, na ordem abaixo.
+
+Grupos:
+  smoke        geonode.tests.smoke, test_rest_api, test_search, test_utils, test_headers
+  main         <app>.tests dos GEONODE_APPS (exceto security, geoserver e upload),
+               mais thumbs, people e geonode_openid_connect
+  security     <app>.tests dos GEONODE_APPS com "security"
+  gis_backend  <app>.tests dos GEONODE_APPS com "geoserver"
+  rest_apis    APIs REST (api, base, layers, maps, documents, geoapps)
+  csw          geonode.tests.csw e geonode.catalogue.backends.tests
+  upload       geonode.upload
+
+Opções:
+  -h, --help        mostra esta ajuda e sai
+  -l, --list        lista os grupos e sai
+  -f, --failfast    para cada grupo no primeiro teste com falha (como na CI)
+      --lang CODE   LANGUAGE_CODE dos testes (ex.: en-us); padrão: o do .env
+                    (vários testes do GeoNode comparam textos em inglês)
+      --relaxed     django/celery/geoserver como root e com filesystem gravável,
+                    para separar falhas causadas pela execução sem root / somente leitura
+  -k, --keep        mantém a stack de testes no final, para inspeção
+      --down        remove a stack de testes mantida (com os volumes) e sai
+
+Variáveis:
+  CONTAINER_ENGINE=docker|podman   força o engine (padrão: Docker se responder, senão Podman)
+  BOOT_TIMEOUT=<segundos>          espera máxima pelo django/geoserver saudáveis (padrão: 3600)
+
+Saída:
+  logs em ~/.cache/geosdc-tests/logs/<data-hora>/: <grupo>.log para cada grupo e
+  compose-up.log com a subida da stack; código 0 só se todos os grupos passarem.
+
+Exemplos:
+  $(basename "$0") smoke
+  $(basename "$0") --lang en-us main upload
+  $(basename "$0") --failfast --keep gis_backend
+  $(basename "$0") --down
+EOF
+    exit "${1:-0}"
+}
+
+keep=false; down_only=false; failfast=""; lang=""; relaxed=false; groups=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -l|--list)     printf '%s\n' "${ALL_GROUPS[@]}"; exit 0 ;;
+        -k|--keep)     keep=true ;;
+        --down)        down_only=true ;;
+        -f|--failfast) failfast="--failfast" ;;
+        --lang)        [ $# -ge 2 ] || { echo "--lang exige um valor (ex.: en-us)" >&2; exit 1; }; lang="$2"; shift ;;
+        --lang=*)      lang="${1#--lang=}" ;;
+        --relaxed)     relaxed=true ;;
+        -h|--help)     usage 0 ;;
+        -*)            echo "Opção desconhecida: $1" >&2; usage 1 ;;
+        *)             groups+=("$1") ;;
+    esac
+    shift
+done
+[ ${#groups[@]} -gt 0 ] || groups=("${ALL_GROUPS[@]}")
+for g in "${groups[@]}"; do
+    [[ " ${ALL_GROUPS[*]} " == *" $g "* ]] || { echo "Grupo desconhecido: '$g' (grupos: ${ALL_GROUPS[*]})" >&2; exit 1; }
+done
+
+# Executa a partir do diretório do projeto, independente de onde foi chamado
+cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+[ -e .env ] || { echo "Não há .env no projeto (crie-o ou rode ./geosdc uma vez)" >&2; exit 1; }
+
+# Lê uma variável do .env sem carregá-lo (sem aspas; não exibe valores)
+env_get() { sed -n -E "s/^$1=[\"']?([^\"']*)[\"']?\$/\1/p" .env | tail -n 1; }
+
+base_project="$(env_get COMPOSE_PROJECT_NAME)"
+[ -n "$base_project" ] || { echo "COMPOSE_PROJECT_NAME não definido no .env" >&2; exit 1; }
+project="${base_project}test"
+
+# --- Engine (mesma regra do ./geosdc) ---------------------------------------------------------------
+engine_ok() {
+    case "$1" in
+        docker) command -v docker >/dev/null 2>&1 && docker version --format '{{.Server.Version}}' >/dev/null 2>&1 ;;
+        podman) command -v podman >/dev/null 2>&1 && podman info --format '{{.Host.Arch}}' >/dev/null 2>&1 ;;
+        *) return 1 ;;
+    esac
+}
+engine="${CONTAINER_ENGINE:-}"
+if [ -n "$engine" ]; then
+    engine_ok "$engine" || { echo "CONTAINER_ENGINE='$engine' indisponível" >&2; exit 1; }
+elif engine_ok docker; then engine=docker
+elif engine_ok podman; then engine=podman
+else echo "Nenhum engine de containers disponível (Docker ou Podman)" >&2; exit 1
+fi
+case "$engine" in
+    docker) if docker compose version >/dev/null 2>&1; then compose=(docker compose); else compose=(docker-compose); fi ;;
+    podman) export PODMAN_COMPOSE_WARNING_LOGS=false; compose=(podman compose) ;;
+esac
+
+# --- Arquivos da stack de testes (fora do repositório; a cópia do .env tem segredos) ---------------
+state_dir="${XDG_CACHE_HOME:-$HOME/.cache}/geosdc-tests"
+run_dir="$state_dir/$project"
+mkdir -p "$run_dir"; chmod 700 "$state_dir" "$run_dir"
+env_copy="$run_dir/env"
+override="$run_dir/compose-override.yml"
+lock_dir="$state_dir/$project.lock"
+
+# Uma execução por vez: todas usam o mesmo projeto compose, e a limpeza de uma derrubaria a stack
+# da outra. A trava guarda o PID; trava de um processo que já terminou é descartada.
+take_lock() {
+    if ! mkdir "$lock_dir" 2>/dev/null; then
+        local pid; pid="$(cat "$lock_dir/pid" 2>/dev/null || true)"
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            echo "Já há uma execução do geosdc-tests em andamento (PID $pid); aguarde ou interrompa-a" >&2
+            exit 1
+        fi
+        rm -rf "$lock_dir"; mkdir "$lock_dir"
+    fi
+    echo $$ > "$lock_dir/pid"
+}
+release_lock() { rm -rf "$lock_dir"; }
+
+dc() { "${compose[@]}" -p "$project" --env-file "$env_copy" -f docker-compose.yml -f "$override" "$@"; }
+
+teardown() {
+    echo ">> Removendo a stack de testes '$project' e os volumes dela" >&2
+    dc down -v --remove-orphans >/dev/null 2>&1 || true
+    rm -rf "$run_dir"
+    release_lock
+}
+
+take_lock
+if $down_only; then
+    [ -f "$env_copy" ] || { release_lock; rmdir "$run_dir" 2>/dev/null || true; echo "Nenhuma stack de testes '$project' mantida" >&2; exit 0; }
+    teardown; exit 0
+fi
+
+# Sem --keep, a stack de testes e a cópia do .env são removidas na saída, inclusive em falhas
+if $keep; then trap release_lock EXIT; else trap teardown EXIT; fi
+# Ctrl+C ou SIGTERM: sai pelo caminho normal, para o trap de EXIT remover a stack
+trap 'echo ">> Interrompido" >&2; exit 130' INT TERM
+
+# Cópia do .env só com o nome do projeto trocado (e o idioma, se pedido)
+umask 077
+sed -E "s/^COMPOSE_PROJECT_NAME=.*/COMPOSE_PROJECT_NAME=$project/" .env > "$env_copy"
+if [ -n "$lang" ]; then
+    sed -i.bak -E "s/^LANGUAGE_CODE=.*/LANGUAGE_CODE=$lang/" "$env_copy" && rm -f "$env_copy.bak"
+    grep -q '^LANGUAGE_CODE=' "$env_copy" || echo "LANGUAGE_CODE=$lang" >> "$env_copy"
+fi
+umask 022
+
+# Imagens do ambiente (o compose montaria os nomes com o projeto de testes)
+img_geonode="$base_project/geonode:$(env_get GEONODE_BASE_IMAGE_VERSION)"
+img_geoserver="$base_project/geoserver:$(env_get GEOSERVER_BASE_IMAGE_VERSION)"
+img_postgis="$base_project/postgis:$(env_get POSTGRES_BASE_IMAGE_VERSION)-$(env_get POSTGIS_BASE_IMAGE_VERSION)"
+for img in "$img_geonode" "$img_geoserver" "$img_postgis"; do
+    "$engine" image inspect "$img" >/dev/null 2>&1 || { echo "Imagem $img não encontrada: rode './geosdc build' antes" >&2; exit 1; }
+done
+
+{
+    echo "# Gerado por geosdc-tests: stack de testes descartável"
+    echo "services:"
+    for svc in django celery geoserver db; do
+        case "$svc" in django|celery) img=$img_geonode ;; geoserver) img=$img_geoserver ;; db) img=$img_postgis ;; esac
+        echo "  $svc:"
+        echo "    image: $img"
+        echo "    env_file: [\"$env_copy\"]"
+        if $relaxed && [ "$svc" != db ]; then
+            echo "    user: \"0:0\""
+            echo "    read_only: false"
+        fi
+    done
+} > "$override"
+
+log_dir="$state_dir/logs/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$log_dir"
+up_log="$log_dir/compose-up.log"
+
+# Subida com o progresso do compose (stdout e stderr) no log, e o final dele na tela em caso de falha
+dc_up() {
+    dc up -d --no-build "$@" >> "$up_log" 2>&1 || {
+        echo "Falha ao subir $*; final de $up_log:" >&2; tail -n 20 "$up_log" >&2; return 1; }
+}
+
+# --- Subida da stack --------------------------------------------------------------------------------
+boot_timeout="${BOOT_TIMEOUT:-3600}"
+wait_healthy() {
+    local svc=$1 cid status waited=0
+    # Nome fixo do compose (container_name: <serviço>4${COMPOSE_PROJECT_NAME}); o "ps -q" do
+    # podman compose não devolve o ID
+    cid="${svc}4${project}"
+    while :; do
+        status="$("$engine" inspect -f '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' "$cid" 2>/dev/null || echo missing)"
+        case "$status" in
+            "running healthy") return 0 ;;
+            exited*|dead*|missing) echo "O serviço $svc parou ($status); veja: ${compose[*]} -p $project logs $svc" >&2; return 1 ;;
+        esac
+        [ "$waited" -lt "$boot_timeout" ] || { echo "Tempo esgotado esperando o $svc ficar saudável ($status)" >&2; return 1; }
+        sleep 10; waited=$((waited + 10))
+    done
+}
+
+echo ">> Engine: $engine | stack de testes: $project | grupos: ${groups[*]}$($relaxed && echo ' | modo relaxed (root, gravável)')" >&2
+echo ">> Logs em $log_dir" >&2
+echo ">> Subindo db, redis, memcached e django (o primeiro boot roda migrações e fixtures)" >&2
+dc_up db redis memcached django
+wait_healthy django
+echo ">> Subindo celery e geoserver" >&2
+dc_up celery geoserver
+wait_healthy geoserver
+
+# --- Execução dos grupos ----------------------------------------------------------------------------
+pg_user="$(env_get POSTGRES_USER)"; pg_user="${pg_user:-postgres}"
+db_main="$(env_get GEONODE_DATABASE)";   db_main_owner="$(env_get GEONODE_DATABASE_USER)"
+db_data="$(env_get GEONODE_GEODATABASE)"; db_data_owner="$(env_get GEONODE_GEODATABASE_USER)"
+
+# Bancos de teste recriados a cada grupo (na CI, cada grupo roda numa stack nova)
+reset_test_dbs() {
+    dc exec -T db psql -U "$pg_user" -qc \
+        "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname LIKE 'test\_%' AND pid <> pg_backend_pid();" >/dev/null
+    local pair db owner
+    for pair in "test_$db_main:$db_main_owner" "test_$db_data:$db_data_owner"; do
+        db=${pair%%:*}; owner=${pair##*:}
+        # client_min_messages=warning: sem o NOTICE de "does not exist, skipping" do --if-exists
+        dc exec -T -e PGOPTIONS="-c client_min_messages=warning" db dropdb -U "$pg_user" --if-exists "$db"
+        dc exec -T db createdb -U "$pg_user" -O "$owner" "$db"
+        dc exec -T db psql -U "$pg_user" -d "$db" -qc "CREATE EXTENSION IF NOT EXISTS postgis;"
+    done
+}
+
+# Rótulos de teste de cada grupo, avaliados dentro do container (GEONODE_APPS vem dos settings)
+labels_for() {
+    local sel='import django; django.setup(); from django.conf import settings as s; print(" ".join(a + ".tests" for a in s.GEONODE_APPS if FILTER))'
+    case "$1" in
+        smoke)       echo 'geonode.tests.smoke geonode.tests.test_rest_api geonode.tests.test_search geonode.tests.test_utils geonode.tests.test_headers' ;;
+        main)        echo "\$(python -c '${sel/FILTER/\"security\" not in a and \"geoserver\" not in a and \"upload\" not in a}' 2>/dev/null | tail -n 1) geonode.thumbs.tests geonode.people.tests geonode.people.socialaccount.providers.geonode_openid_connect.tests" ;;
+        security)    echo "\$(python -c '${sel/FILTER/\"security\" in a}' 2>/dev/null | tail -n 1)" ;;
+        gis_backend) echo "\$(python -c '${sel/FILTER/\"geoserver\" in a}' 2>/dev/null | tail -n 1)" ;;
+        rest_apis)   echo 'geonode.api.tests geonode.base.api.tests geonode.layers.api.tests geonode.maps.api.tests geonode.documents.api.tests geonode.geoapps.api.tests' ;;
+        csw)         echo 'geonode.tests.csw geonode.catalogue.backends.tests' ;;
+        upload)      echo 'geonode.upload' ;;
+    esac
+}
+
+declare -a summary=()
+overall=0
+
+for g in "${groups[@]}"; do
+    start=$(date +%s)
+    echo ">> [$g] início $(date +%H:%M:%S)" >&2
+    reset_test_dbs
+    set +e
+    dc exec -T django bash -s > "$log_dir/$g.log" 2>&1 <<EOF
+set -e
+[ -f "\$HOME/.override_env" ] && source "\$HOME/.override_env"
+export DJANGO_SETTINGS_MODULE="\${DJANGO_SETTINGS_MODULE:-geosdc.settings}"
+cd /usr/src/project
+T="$(labels_for "$g")"
+[ -n "\$(echo \$T | tr -d ' ')" ] || { echo "ERRO: lista de testes vazia para o grupo $g"; exit 2; }
+echo "LABELS: \$T"
+python manage.py test -v 2 --keepdb --noinput $failfast \$T
+EOF
+    rc=$?
+    set -e
+    mins=$(( ($(date +%s) - start) / 60 ))
+    result="$(grep -E '^(Ran [0-9]+ tests? in|OK|FAILED|ERRO)' "$log_dir/$g.log" | tr '\n' ' ' | sed 's/ *$//')"
+    [ "$rc" -eq 0 ] || overall=1
+    line="$(printf '%-12s %s  %3d min  %s' "$g" "$([ "$rc" -eq 0 ] && echo 'PASSOU' || echo "FALHOU (rc=$rc)")" "$mins" "${result:-sem resumo; veja o log}")"
+    summary+=("$line")
+    echo ">> $line" >&2
+done
+
+echo
+echo "Resumo ($project, logs em $log_dir):"
+printf '  %s\n' "${summary[@]}"
+$keep && echo ">> Stack mantida. Para remover: ./geosdc-tests --down" >&2
+exit "$overall"
