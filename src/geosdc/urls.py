@@ -21,9 +21,11 @@
 # Do not remove handler500 import. It is required to re-export
 # the custom error page handler for the GeoNode project
 # related issue: https://github.com/GeoNode/geonode-project/issues/570
-from geonode.urls import urlpatterns, handler500  # noqa
+from geonode.urls import urlpatterns, handler500, sitemaps  # noqa
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.flatpages.sitemaps import FlatPageSitemap
+from django.urls import include, path
 
 # Login do admin com reCAPTCHA (mesma flag do login e do cadastro do GeoNode)
 if settings.RECAPTCHA_ENABLED:
@@ -40,3 +42,10 @@ urlpatterns = [
         name='home'),
  ] + urlpatterns
 """
+
+# Flatpages (editor no admin, pelo geonode-flatpages-editor), fora do prefixo de idioma: cada idioma
+# é uma página separada (ex.: /pages/politica-de-cookies/ e /pages/cookie-policy/)
+sitemaps.update(page=FlatPageSitemap)
+urlpatterns += [
+    path("pages/", include("django.contrib.flatpages.urls")),
+]

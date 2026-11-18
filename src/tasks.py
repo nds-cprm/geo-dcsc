@@ -373,6 +373,17 @@ def fixtures(ctx):
             except Exception as e:
                 print(f"Warning: Failed to load fixture {fixture}: {e}")
 
+    # Tesauros do projeto (ex.: labels-i18n, rótulos pt do editor de metadados); "update" cria ou atualiza
+    for thesaurus in getattr(settings, "PROJECT_THESAURI", []):
+        print(f"Loading project thesaurus: {thesaurus}")
+        try:
+            ctx.run(
+                f"python manage.py thesaurus load -f {thesaurus} --action update --settings={_localsettings()}",
+                pty=True,
+            )
+        except Exception as e:
+            print(f"Warning: Failed to load thesaurus {thesaurus}: {e}")
+
 
 @task
 def collectstatic(ctx):

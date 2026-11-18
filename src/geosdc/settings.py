@@ -53,7 +53,7 @@ LANGUAGE_CODE = os.getenv("LANGUAGE_CODE", "en")
 
 # Contornar bloqueio de idiomas do Mapstore/Geonode
 # geonode.settings lines 1551-1565
-LANGUAGES = ast.literal_eval(os.getenv("LANGUAGES", MAPSTORE_DEFAULT_LANGUAGES))
+LANGUAGES = ast.literal_eval(os.environ["LANGUAGES"]) if os.getenv("LANGUAGES") else MAPSTORE_DEFAULT_LANGUAGES
 
 if PROJECT_NAME not in INSTALLED_APPS:
     INSTALLED_APPS += (PROJECT_NAME,)
@@ -127,10 +127,36 @@ SOCIALACCOUNT_PROVIDERS.update({
 #     "govbr": "geosdc.account.profileextractors.GovBRExtractor"
 # }
 
+# Flatpages (páginas institucionais em /pages/<url>/) com o editor geonode-flatpages-editor, que
+# substitui o admin delas e por isso vem depois de django.contrib.flatpages. As tabelas django_flatpage*
+# já existem nos bancos. O sites/SITE_ID vem do GeoNode.
+if "django.contrib.flatpages" not in INSTALLED_APPS:
+    INSTALLED_APPS += ("django.contrib.flatpages",)
+INSTALLED_APPS += ("geonode_flatpages_editor",)
+
 # Project Fixtures
 PROJECT_FIXTURES = glob.glob(os.path.join(LOCAL_ROOT, "fixtures", "*.json"))
+
+# Tesauros do projeto (RDF/SKOS), carregados na inicialização com "thesaurus load --action update"
+# (task fixtures do tasks.py); o identificador de cada um vem do nome do arquivo
+PROJECT_THESAURI = sorted(glob.glob(os.path.join(LOCAL_ROOT, "thesauri", "*.rdf")))
 
 # Trava do envio da fila de notificações (pinax, task send_queued_notifications do Celery, usada com
 # ASYNC_SIGNALS=True): sem isto, o arquivo de trava é criado no diretório atual (/usr/src/project),
 # que é somente leitura. /tmp é o tmpfs do container: a trava some num restart, sem ficar presa.
 NOTIFICATION_LOCK_LOCATION = "/tmp/send_notices"
+
+# Aviso de cookies (LGPD) e Google Tag Manager (geosdc/snippets/cookie_consent.html): o GTM só é
+# carregado depois do aceite. O ID precisa ter o formato GTM-XXXX; vazio, nada é carregado.
+GOOGLE_TAG_MANAGER_ID = os.getenv("GOOGLE_TAG_MANAGER_ID", "")
+# Política de cookies, por idioma da interface (pt, en): flatpages da fixture geosdc-flatpages-cookies.json;
+# definida e vazia na env, o link não aparece no aviso nem no rodapé
+COOKIE_POLICY_URL = os.getenv("COOKIE_POLICY_URL", "/pages/politica-de-cookies/")
+COOKIE_POLICY_URLS = {
+    "pt": COOKIE_POLICY_URL,
+    "en": os.getenv("COOKIE_POLICY_URL_EN", "/pages/cookie-policy/"),
+}
+TEMPLATES[0]["OPTIONS"]["context_processors"] += [
+    "geosdc.context_processors.google_tag_manager",
+    "geosdc.context_processors.site_pages",
+]

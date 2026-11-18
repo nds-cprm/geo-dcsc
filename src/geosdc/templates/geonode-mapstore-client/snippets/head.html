@@ -1,0 +1,7 @@
+{% extends "geonode-mapstore-client/snippets/head.html" %}
+
+{% block extras %}
+{{ block.super }}
+{# aviso de cookies; carrega o Google Tag Manager só depois do aceite #}
+{% include "geosdc/snippets/cookie_consent.html" %}
+{% endblock extras %}

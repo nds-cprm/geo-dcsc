@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+{{ block.super }}
+{# aviso de cookies; carrega o Google Tag Manager só depois do aceite #}
+{% include "geosdc/snippets/cookie_consent.html" %}
+{% endblock extra_head %}
