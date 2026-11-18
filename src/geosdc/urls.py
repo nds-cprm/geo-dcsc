@@ -18,14 +18,17 @@
 #
 #########################################################################
 
-# Do not remove handler500 import. It is required to re-export
-# the custom error page handler for the GeoNode project
-# related issue: https://github.com/GeoNode/geonode-project/issues/570
-from geonode.urls import urlpatterns, handler500, sitemaps  # noqa
+# O geonode-project reexporta o handler500 do GeoNode (https://github.com/GeoNode/geonode-project/issues/570).
+# Aqui ele é substituído logo abaixo pelo geosdc.views.handler500, que usa a mesma página do GeoNode
+# (geonode.views.err500, com o 500.html do projeto) e, se ela falhar (ex.: banco fora do ar), uma
+# página de reserva sem banco. Sem um handler500 definido, valeria o padrão do Django, sem contexto.
+from geonode.urls import urlpatterns, sitemaps  # noqa
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.flatpages.sitemaps import FlatPageSitemap
 from django.urls import include, path
+
+handler500 = "geosdc.views.handler500"
 
 # Login do admin com reCAPTCHA (mesma flag do login e do cadastro do GeoNode)
 if settings.RECAPTCHA_ENABLED:

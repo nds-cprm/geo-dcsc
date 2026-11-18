@@ -1,0 +1,27 @@
+{% extends "geonode_base.html" %}
+{% load i18n %}
+{% comment %}
+Cópia de geonode/templates/500.html (GeoNode 5.0.3; comparar ao atualizar o GeoNode), com um texto
+para o visitante do portal: em vez de contatar o "administrador do GeoNode" e registrar o problema no
+rastreador do GeoNode, tentar de novo e, se continuar, usar a página "Fale conosco" (CONTACT_PAGE_URL,
+do context processor geosdc.context_processors.site_pages; vazio, a frase sai sem o link).
+blocktrans trimmed: quebras de linha e espaços do template não entram no msgid (locale/pt_BR).
+{% endcomment %}
+
+{% block body %}
+  <div id="description">
+      <h3><strong>{% trans "There was a problem loading this page" %}</strong></h3>
+  </div>
+  <p>
+  {% if CONTACT_PAGE_URL %}
+    {% blocktrans trimmed with contact_url=CONTACT_PAGE_URL %}
+      Please try again in a few minutes. If the problem persists, contact the GeoSDC team through the
+      <a href="{{ contact_url }}">Contact us</a> page.
+    {% endblocktrans %}
+  {% else %}
+    {% blocktrans trimmed %}
+      Please try again in a few minutes. If the problem persists, contact the GeoSDC team.
+    {% endblocktrans %}
+  {% endif %}
+  </p>
+{% endblock %}

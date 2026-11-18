@@ -770,3 +770,12 @@ msgstr "Defesa Civil de Santa Catarina"
 #: geosdc/templates/geonode-mapstore-client/snippets/hero.html
 msgid "Data and maps from the SC Department of Civil Protection and Defense"
 msgstr "Dados e mapas da Secretaria de Proteção e Defesa Civil de SC"
+
+#: geosdc/templates/500.html
+#, python-format
+msgid "Please try again in a few minutes. If the problem persists, contact the GeoSDC team through the <a href=\"%(contact_url)s\">Contact us</a> page."
+msgstr "Tente novamente em alguns minutos. Se o problema continuar, entre em contato com a equipe do GeoSDC pela página <a href=\"%(contact_url)s\">Fale conosco</a>."
+
+#: geosdc/templates/500.html
+msgid "Please try again in a few minutes. If the problem persists, contact the GeoSDC team."
+msgstr "Tente novamente em alguns minutos. Se o problema continuar, entre em contato com a equipe do GeoSDC."
