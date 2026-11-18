@@ -452,7 +452,16 @@ body.gn-legacy #wrap {
  *   e texto compacto text-sm 14/20 (células de tabelas de dados, p. 53).
  */
 .msgapi .gn-legacy .flatpage-content {
-    max-width: 46rem;
+    max-width: 47rem;
+    /* rolagem horizontal só quando algo não cabe (ex.: tabela com uma palavra longa no celular), sem
+       alargar a página e sem display: block na tabela, que tira a semântica de tabela em alguns
+       leitores de tela; 8px de folga dos dois lados para o anel de foco (3px + 4px) não ser cortado,
+       compensados na margem para o texto ficar no lugar (46rem úteis) */
+    overflow-x: auto;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
     font-size: 1rem;
     line-height: 1.5rem;
 }
@@ -547,7 +556,9 @@ body.gn-legacy #wrap {
     border: 1px solid #D9D9D9;
     text-align: left;
     vertical-align: top;
-    overflow-wrap: anywhere;
+    /* break-word, não anywhere: anywhere deixa a coluna encolher abaixo de uma palavra e quebra
+       palavras curtas no meio ("sessioni-d"); break-word só quebra o que não cabe de jeito nenhum */
+    overflow-wrap: break-word;
 }
 .msgapi .gn-legacy .flatpage-content th {
     background-color: #F2F2F2;
