@@ -22,6 +22,15 @@
 # the custom error page handler for the GeoNode project
 # related issue: https://github.com/GeoNode/geonode-project/issues/570
 from geonode.urls import urlpatterns, handler500  # noqa
+from django.conf import settings
+from django.contrib import admin
+
+# Login do admin com reCAPTCHA (mesma flag do login e do cadastro do GeoNode)
+if settings.RECAPTCHA_ENABLED:
+    from geosdc.forms import AdminReCaptchaAuthenticationForm
+
+    admin.site.login_form = AdminReCaptchaAuthenticationForm
+    admin.site.login_template = "admin/login_recaptcha.html"
 
 """
 # You can register your own urlpatterns here
