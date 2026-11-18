@@ -1,5 +1,13 @@
 {% load static %}
+{% comment %}
+Incluído depois do geonode.css do client (index.html, page.html e o base.html das páginas do Django).
+Tema sc.gov.br: fontes Inter e Montserrat variável locais e tokens de cor (variáveis --ms-*) em geosdc/css/sc-theme.css;
+o site_base.css vem depois, com ajustes pontuais do projeto. O extra_css do tema do admin
+(GeoNode Themes) continua por último, para poder sobrescrever tudo.
+{% endcomment %}
 
+<link href="{% static 'geosdc/fonts/fonts.css' %}" rel="stylesheet">
+<link href="{% static 'geosdc/css/sc-theme.css' %}" rel="stylesheet">
 <link href="{% static 'css/site_base.css' %}" rel="stylesheet">
 <style>
     {% block extra_css %}

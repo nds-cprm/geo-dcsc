@@ -1,0 +1,238 @@
+/*
+ * Tema sc.gov.br para o GeoNode (parte 1: tokens de cor e tipografia).
+ *
+ * Sobrescreve as variáveis --ms-* que o client (geonode-mapstore-client 5.0.3) define em :root no
+ * static/mapstore/dist/themes/geonode.css; este arquivo é carregado depois dele, pelo
+ * snippets/custom_theme.html. Só troca valores: layout, componentes e comportamento continuam os do
+ * GeoNode. Ao atualizar o client, conferir variáveis novas no :root do geonode.css.
+ *
+ * Paleta do manual de identidade sc.gov.br (versão 0.1.2, "Guia de Cores"). Escalas do manual, do
+ * tom mais escuro ao mais claro:
+ *   verde    #03471A #176929 #2B8C38 #40AD47 #70C275 #9FD6A3 #CFEBD1
+ *   vermelho #700F10 #971618 #BE1D20 #ED1C24 #F1555B #F68E91 #FAC6C8
+ *   sucesso  #597029 #738C36 #8AAB40 #A1C74D #B8D579 #D0E3A6 #E8F1D2
+ *   alerta   #947100 #B38C00 #DDAA01 #FFCD00 #FFD946 #FFEE80 #FFF7BF
+ *   links    #1C458F #2666AB #2E87C4 #36A8E0 #68BEE8 #9AD4F0 #CDE9F7
+ *   cinza    #1F1F1F #363636 #4A4A4A #616161 #787878 #8F8F8F #A6A6A6
+ *            #B2B2B2 #BFBFBF #CCCCCC #D9D9D9 #E5E5E5 #F2F2F2
+ * Regras do manual aplicadas: hover/foco/pressionado descem um tom; desabilitado sobe; bordas sempre
+ * em cinza ou na cor semântica, nunca nas cores da marca.
+ *
+ * Contraste (WCAG AA, texto normal >= 4,5): os tons "de marca" #40AD47 (2,9 com branco) e #ED1C24
+ * (4,4) não servem de fundo para texto branco; por isso botões e estados usam #176929 (6,8) e
+ * #BE1D20 (6,2), e os tons vivos ficam para destaques sem texto.
+ */
+:root {
+    /* títulos em Montserrat, como no site da Defesa Civil; texto em Inter, como no manual */
+    --geosdc-font-display: 'Montserrat Variable', 'Montserrat', sans-serif;
+    --geosdc-font-text: 'Inter', sans-serif;
+
+    --ms-font-family-sans-serif: var(--geosdc-font-text);
+    --ms-font-family-base: var(--geosdc-font-text);
+
+    /* superfícies e texto (escala de cinza) */
+    --ms-main-color: #1F1F1F;
+    --ms-main-bg: #FFFFFF;
+    --ms-main-border-color: #D9D9D9;
+    --ms-main-variant-color: #1F1F1F;
+    --ms-main-variant-bg: #F2F2F2;
+    --ms-main-hover-color: #1F1F1F;
+    --ms-main-hover-bg: #E5E5E5;
+    --ms-placeholder-color: #616161;
+    --ms-placeholder-bg: #E5E5E5;
+    --ms-disabled-color: #8F8F8F;
+    --ms-disabled-bg: #F2F2F2;
+    --ms-image-color: #CCCCCC;
+    --ms-image-bg: #F2F2F2;
+    --ms-badge-color: #1F1F1F;
+    --ms-badge-bg: #E5E5E5;
+
+    /* foco e seleção */
+    --ms-focus-color: #2B8C38;
+    --ms-selected-color: #176929;
+    --ms-selected-bg: rgba(64, 173, 71, 0.25);
+    --ms-selected-hover-bg: rgba(64, 173, 71, 0.1);
+
+    /* links (azul de hyperlinks do manual) */
+    --ms-link-color: #2666AB;
+    --ms-link-hover-color: #1C458F;
+
+    /* cores semânticas */
+    --ms-primary: #176929;
+    --ms-primary-contrast: #FFFFFF;
+    --ms-success: #597029;
+    --ms-success-contrast: #FFFFFF;
+    --ms-warning: #FFCD00;
+    --ms-warning-contrast: #1F1F1F;
+    --ms-danger: #BE1D20;
+    --ms-danger-contrast: #FFFFFF;
+
+    /* carregamento */
+    --ms-loader-color: #1F1F1F;
+    --ms-loader-fade-color: rgba(31, 31, 31, 0.2);
+    --ms-loader-primary-color: #176929;
+    --ms-loader-primary-fade-color: rgba(23, 105, 41, 0.2);
+
+    /* faixa de boas-vindas da home (jumbotron) */
+    --ms-jumbotron-color: #FFFFFF;
+    --ms-jumbotron-bg: #03471A;
+
+    /* rodapé */
+    --ms-footer-color: #1F1F1F;
+    --ms-footer-bg: #F2F2F2;
+    --ms-footer-link-color: #2666AB;
+    --ms-footer-link-hover-color: #1C458F;
+
+    /* linha do tempo (camadas temporais) */
+    --ms-timeline-selected-bg: rgba(23, 105, 41, 0.05);
+    --ms-timeline-histogram-bg: rgba(43, 140, 56, 0.5);
+    --ms-timeline-histogram-color: #176929;
+    --ms-timeline-range-bg: rgba(31, 31, 31, 0.2);
+    --ms-timeline-playback-range-bg: rgba(64, 173, 71, 0.2);
+
+    /* botão padrão */
+    --ms-button-color: #1F1F1F;
+    --ms-button-bg: #FFFFFF;
+    --ms-button-border-color: #D9D9D9;
+    --ms-button-focus-color: #1F1F1F;
+    --ms-button-focus-bg: #FFFFFF;
+    --ms-button-focus-border-color: #2B8C38;
+    --ms-button-hover-color: #1F1F1F;
+    --ms-button-hover-bg: #F2F2F2;
+    --ms-button-hover-border-color: #CCCCCC;
+    --ms-button-active-color: #1F1F1F;
+    --ms-button-active-bg: #E5E5E5;
+    --ms-button-active-border-color: #CCCCCC;
+    --ms-button-active-hover-color: #1F1F1F;
+    --ms-button-active-hover-bg: #D9D9D9;
+    --ms-button-active-hover-border-color: #BFBFBF;
+    --ms-button-disabled-color: #8F8F8F;
+    --ms-button-disabled-bg: #F2F2F2;
+    --ms-button-disabled-border-color: #F2F2F2;
+    --ms-button-badge-color: #1F1F1F;
+    --ms-button-badge-bg: #FFFFFF;
+
+    /* botão primário (verde) */
+    --ms-button-primary-color: #FFFFFF;
+    --ms-button-primary-bg: #176929;
+    --ms-button-primary-border-color: #176929;
+    --ms-button-primary-focus-color: #FFFFFF;
+    --ms-button-primary-focus-bg: #176929;
+    --ms-button-primary-focus-border-color: #03471A;
+    --ms-button-primary-hover-color: #FFFFFF;
+    --ms-button-primary-hover-bg: #03471A;
+    --ms-button-primary-hover-border-color: #03471A;
+    --ms-button-primary-active-color: #FFFFFF;
+    --ms-button-primary-active-bg: #03471A;
+    --ms-button-primary-active-border-color: #03471A;
+    --ms-button-primary-active-hover-color: #FFFFFF;
+    --ms-button-primary-active-hover-bg: #03471A;
+    --ms-button-primary-active-hover-border-color: #03471A;
+    --ms-button-primary-disabled-color: #FFFFFF;
+    --ms-button-primary-disabled-bg: #9FD6A3;
+    --ms-button-primary-disabled-border-color: #9FD6A3;
+    --ms-button-primary-badge-color: #176929;
+    --ms-button-primary-badge-bg: #FFFFFF;
+
+    /* botão de sucesso */
+    --ms-button-success-color: #FFFFFF;
+    --ms-button-success-bg: #597029;
+    --ms-button-success-border-color: #597029;
+    --ms-button-success-focus-color: #FFFFFF;
+    --ms-button-success-focus-bg: #597029;
+    --ms-button-success-focus-border-color: #3F501D;
+    --ms-button-success-hover-color: #FFFFFF;
+    --ms-button-success-hover-bg: #4A5E22;
+    --ms-button-success-hover-border-color: #4A5E22;
+    --ms-button-success-active-color: #FFFFFF;
+    --ms-button-success-active-bg: #4A5E22;
+    --ms-button-success-active-border-color: #4A5E22;
+    --ms-button-success-active-hover-color: #FFFFFF;
+    --ms-button-success-active-hover-bg: #3F501D;
+    --ms-button-success-active-hover-border-color: #3F501D;
+    --ms-button-success-disabled-color: #FFFFFF;
+    --ms-button-success-disabled-bg: #B8D579;
+    --ms-button-success-disabled-border-color: #B8D579;
+    --ms-button-success-badge-color: #597029;
+    --ms-button-success-badge-bg: #FFFFFF;
+
+    /* botão de alerta (amarelo com texto escuro) */
+    --ms-button-warning-color: #1F1F1F;
+    --ms-button-warning-bg: #FFCD00;
+    --ms-button-warning-border-color: #FFCD00;
+    --ms-button-warning-focus-color: #1F1F1F;
+    --ms-button-warning-focus-bg: #FFCD00;
+    --ms-button-warning-focus-border-color: #B38C00;
+    --ms-button-warning-hover-color: #1F1F1F;
+    --ms-button-warning-hover-bg: #DDAA01;
+    --ms-button-warning-hover-border-color: #DDAA01;
+    --ms-button-warning-active-color: #1F1F1F;
+    --ms-button-warning-active-bg: #DDAA01;
+    --ms-button-warning-active-border-color: #DDAA01;
+    --ms-button-warning-active-hover-color: #1F1F1F;
+    --ms-button-warning-active-hover-bg: #B38C00;
+    --ms-button-warning-active-hover-border-color: #B38C00;
+    --ms-button-warning-disabled-color: #8F8F8F;
+    --ms-button-warning-disabled-bg: #FFF7BF;
+    --ms-button-warning-disabled-border-color: #FFF7BF;
+    --ms-button-warning-badge-color: #1F1F1F;
+    --ms-button-warning-badge-bg: #FFFFFF;
+
+    /* botão de perigo (vermelho) */
+    --ms-button-danger-color: #FFFFFF;
+    --ms-button-danger-bg: #BE1D20;
+    --ms-button-danger-border-color: #BE1D20;
+    --ms-button-danger-focus-color: #FFFFFF;
+    --ms-button-danger-focus-bg: #BE1D20;
+    --ms-button-danger-focus-border-color: #700F10;
+    --ms-button-danger-hover-color: #FFFFFF;
+    --ms-button-danger-hover-bg: #971618;
+    --ms-button-danger-hover-border-color: #971618;
+    --ms-button-danger-active-color: #FFFFFF;
+    --ms-button-danger-active-bg: #971618;
+    --ms-button-danger-active-border-color: #971618;
+    --ms-button-danger-active-hover-color: #FFFFFF;
+    --ms-button-danger-active-hover-bg: #700F10;
+    --ms-button-danger-active-hover-border-color: #700F10;
+    --ms-button-danger-disabled-color: #FFFFFF;
+    --ms-button-danger-disabled-bg: #F68E91;
+    --ms-button-danger-disabled-border-color: #F68E91;
+    --ms-button-danger-badge-color: #BE1D20;
+    --ms-button-danger-badge-bg: #FFFFFF;
+
+    /* botões "tray" (barras de ferramentas do mapa) */
+    --ms-button-tray-color: #1F1F1F;
+    --ms-button-tray-bg: #FFFFFF;
+    --ms-button-tray-border-color: #176929;
+    --ms-button-tray-focus-color: #1F1F1F;
+    --ms-button-tray-focus-bg: #F2F2F2;
+    --ms-button-tray-focus-border-color: #03471A;
+    --ms-button-tray-hover-color: #1F1F1F;
+    --ms-button-tray-hover-bg: #F2F2F2;
+    --ms-button-tray-hover-border-color: #176929;
+    --ms-button-tray-active-color: #1F1F1F;
+    --ms-button-tray-active-bg: #E5E5E5;
+    --ms-button-tray-active-border-color: #176929;
+    --ms-button-tray-active-hover-color: #1F1F1F;
+    --ms-button-tray-active-hover-bg: #D9D9D9;
+    --ms-button-tray-active-hover-border-color: #03471A;
+    --ms-button-tray-disabled-color: #8F8F8F;
+    --ms-button-tray-disabled-bg: #FFFFFF;
+    --ms-button-tray-disabled-border-color: #FFFFFF;
+    --ms-button-tray-badge-color: #FFFFFF;
+    --ms-button-tray-badge-bg: #1F1F1F;
+}
+
+/*
+ * Montserrat nos títulos (decisão de 2026-11-18, a partir do site da Defesa Civil; o manual cita a
+ * Montserrat no texto, embora o espécime mostre a Figtree); o client usa a fonte base em tudo, com
+ * ".msgapi h1 ... h6 { font-family: inherit }", que tem de ser vencido pela especificidade.
+ * Só h1 a h3: h4 a h6 aparecem em painéis e listas do mapa, onde a Inter lê melhor.
+ */
+h1, h2, h3,
+.msgapi h1, .msgapi h2, .msgapi h3,
+.msgapi .h1, .msgapi .h2, .msgapi .h3,
+.gn-hero h1,
+.gn-hero .carousel-header {
+    font-family: var(--geosdc-font-display);
+}
