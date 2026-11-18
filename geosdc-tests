@@ -36,12 +36,20 @@
 # upload, shapefiles, SLDs, imagens esperadas dos thumbnails etc.). Antes de subir a stack, o script
 # baixa o código-fonte da tag correspondente à versão instalada na imagem (5.0.3.post1 -> tag 5.0.3),
 # guarda em ~/.cache/geosdc-tests/src/ e o monta (somente leitura) em django e celery, sobre o pacote
-# instalado e em /usr/src/geonode, que vira o diretório de trabalho dos testes (vários usam caminhos
-# relativos, como "geonode/base/fixtures/..."). Os .py da tag são idênticos aos do wheel; o fonte só
+# instalado e em /usr/src/geonode (vários testes usam caminhos relativos à raiz do fonte, como
+# "geonode/base/fixtures/..."; ver o diretório de trabalho abaixo). Os .py da tag são idênticos aos do wheel; o fonte só
 # acrescenta os dados.
 #
-# Como no .env_test da CI do GeoNode, a stack de testes roda com SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=True
-# (necessário para os testes do provider geonode_openid_connect), independente do .env.
+# Como no .env_test da CI do GeoNode, a stack de testes roda, independente do .env, com:
+#   SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=True   (testes do provider geonode_openid_connect)
+#   SITEURL=http://localhost:8000/ e GEOSERVER_WEB_UI_LOCATION=http://localhost:8000/geoserver/
+#     (o GeoNode chama a si mesmo pelo SITEURL, e dentro do container só o uWSGI atende, na 8000;
+#     sem nginx na stack de testes, e vários testes esperam essa URL fixa)
+#   ASYNC_SIGNALS=False e ACCOUNT_OPEN_SIGNUP=True
+#
+# Os testes rodam em /tmp/geonode-tests (tmpfs do container, gravável), com o link "geonode" para o
+# pacote do fonte: os caminhos relativos dos testes funcionam e os arquivos que eles criam no
+# diretório atual (ex.: a trava "send_notices" do send_all() do pinax) podem ser gravados.
 #
 # Variáveis:
 #   CONTAINER_ENGINE=docker|podman   força o engine (padrão: Docker se o daemon responder, senão Podman)
@@ -212,11 +220,25 @@ if [ -n "$lang" ]; then
     sed -i.bak -E "s/^LANGUAGE_CODE=.*/LANGUAGE_CODE=$lang/" "$env_copy" && rm -f "$env_copy.bak"
     grep -q '^LANGUAGE_CODE=' "$env_copy" || echo "LANGUAGE_CODE=$lang" >> "$env_copy"
 fi
-# Provider OIDC do GeoNode ativo, como no .env_test da CI: sem ele o app geonode_openid_connect fica
-# fora do INSTALLED_APPS e os testes do provider falham no setUp (o @override_settings dos testes não
-# altera o INSTALLED_APPS). Só na stack de testes; no ambiente real continua valendo o .env
-sed -i.bak -E '/^SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=/d' "$env_copy" && rm -f "$env_copy.bak"
-echo "SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=True" >> "$env_copy"
+# Variáveis como no .env_test da CI, só na stack de testes (no ambiente real continua valendo o .env).
+# Provider OIDC do GeoNode ativo: sem ele o app geonode_openid_connect fica fora do INSTALLED_APPS e
+# os testes do provider falham no setUp (o @override_settings dos testes não altera o INSTALLED_APPS).
+# URLs como no .env_test da CI: o GeoNode chama a si mesmo pelo SITEURL (CSW em /catalogue/csw, proxy
+# do GeoServer em /gs/), e dentro do container django "localhost" é o próprio container, onde só o
+# uWSGI (porta 8000) atende; vários testes também esperam "http://localhost:8000/" fixo nos resultados
+test_env_overrides=(
+    "SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=True"
+    "SITEURL=http://localhost:8000/"
+    "GEOSERVER_WEB_UI_LOCATION=http://localhost:8000/geoserver/"
+    # Sinais síncronos, como os testes do GeoNode pressupõem (no .env real, True: via Celery)
+    "ASYNC_SIGNALS=False"
+    # Cadastro aberto: test_users_register_email_verification cadastra um usuário pelo formulário
+    "ACCOUNT_OPEN_SIGNUP=True"
+)
+for kv in "${test_env_overrides[@]}"; do
+    sed -i.bak -E "/^${kv%%=*}=/d" "$env_copy" && rm -f "$env_copy.bak"
+    echo "$kv" >> "$env_copy"
+done
 umask 022
 
 # Imagens do ambiente (o compose montaria os nomes com o projeto de testes)
@@ -247,6 +269,8 @@ if $test_data; then
             echo "Falha ao baixar o GeoNode $src_ref do GitHub (defina GEONODE_SRC_REF ou use --no-data)" >&2
             exit 1
         fi
+        # mktemp -d cria com 0700: sem leitura para o UID dos containers (1001) fora do Podman rootless
+        chmod 755 "$src_tmp"
         rm -rf "$src_dir"; mv "$src_tmp" "$src_dir"
     fi
     echo ">> Dados de teste: GeoNode $src_ref (instalado: $gn_version) em $src_dir" >&2
@@ -359,9 +383,12 @@ cd /usr/src/project
 T="$(labels_for "$g")"
 [ -n "\$(echo \$T | tr -d ' ')" ] || { echo "ERRO: lista de testes vazia para o grupo $g"; exit 2; }
 echo "LABELS: \$T"
-# Com os dados de teste, roda a partir da raiz do fonte do GeoNode (como na CI), pois vários testes
-# usam caminhos relativos a ela; o manage.py continua sendo o do projeto
-$($test_data && echo "cd $src_mount")
+# Diretório de trabalho gravável no tmpfs (/tmp), pois os testes criam arquivos no diretório atual
+# (ex.: a trava "send_notices" do send_all() do pinax); com os dados de teste, o link "geonode" faz
+# os caminhos relativos dos testes ("geonode/base/fixtures/...") acharem o fonte, como na CI
+mkdir -p /tmp/geonode-tests
+$($test_data && echo "ln -sfn $src_mount/geonode /tmp/geonode-tests/geonode")
+cd /tmp/geonode-tests
 python /usr/src/project/manage.py test -v 2 --keepdb --noinput $failfast \$T
 EOF
     rc=$?
