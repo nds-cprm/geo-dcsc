@@ -78,8 +78,9 @@ services:
     ports:
       - "${HTTP_PORT}:8080"
       - "${HTTPS_PORT}:8443"
+    # Sem volume no /etc/nginx: o entrypoint regera a configuração a cada boot a partir dos templates
+    # da imagem, então um rebuild + up -d basta para aplicar mudanças nos templates.
     volumes:
-      - nginx-confd:/etc/nginx
       - nginx-certificates:/geonode-certificates
       # Somente leitura: o nginx só serve os estáticos e a mídia gravados pelo GeoNode
       - statics:/mnt/volumes/statics:ro
@@ -194,8 +195,6 @@ services:
 volumes:
   statics:
     name: ${COMPOSE_PROJECT_NAME}-statics
-  nginx-confd:
-    name: ${COMPOSE_PROJECT_NAME}-nginxconfd
   nginx-certificates:
     name: ${COMPOSE_PROJECT_NAME}-nginxcerts
   geoserver-data-dir:
