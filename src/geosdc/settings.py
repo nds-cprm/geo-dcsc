@@ -22,6 +22,7 @@
 import os
 import ast
 import glob
+import importlib.util
 
 # Load more settings from a file called local_settings.py if it exists
 try:
@@ -133,6 +134,17 @@ SOCIALACCOUNT_PROVIDERS.update({
 if "django.contrib.flatpages" not in INSTALLED_APPS:
     INSTALLED_APPS += ("django.contrib.flatpages",)
 INSTALLED_APPS += ("geonode_flatpages_editor",)
+
+# Limpeza diária (3h) das imagens órfãs das flatpages pelo Celery beat (tarefa do
+# geonode-flatpages-editor >= 0.2.0; ver o README do pacote). Só agenda se a tarefa existir: com a
+# 0.1.0, o beat mandaria todo dia uma tarefa que o worker não conhece.
+if importlib.util.find_spec("geonode_flatpages_editor.tasks"):
+    from celery.schedules import crontab
+
+    CELERY_BEAT_SCHEDULE["flatpages-cleanup-images"] = {
+        "task": "geonode_flatpages_editor.cleanup_orphan_images",
+        "schedule": crontab(hour=3, minute=0),
+    }
 
 # Project Fixtures
 PROJECT_FIXTURES = glob.glob(os.path.join(LOCAL_ROOT, "fixtures", "*.json"))

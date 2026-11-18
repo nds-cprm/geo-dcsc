@@ -5,7 +5,7 @@
   "fields": {
     "url": "/fale-conosco/",
     "title": "Fale conosco",
-    "content": "<h4>Atendimento</h4>\n<p>Horário de expediente: das 12h30 às 19h, de segunda a sexta<br>Plantão 24 horas, todos os dias</p>\n<p>Telefone: +55 (48) 3664-7000<br>Emergência: 199<br>Alertas da Defesa Civil: SMS 40199</p>\n<h4>Endereço</h4>\n<p>Defesa Civil do Estado de Santa Catarina<br>Av. Ivo Silveira, nº 2320<br>Capoeiras, Florianópolis, SC<br>CEP 88085-001</p>\n<p>Mais informações no site da <a href=\"https://www.defesacivil.sc.gov.br/\" target=\"_blank\">Defesa Civil de Santa Catarina</a>.</p>",
+    "content": "<h4>Atendimento</h4>\n<p>Horário de expediente: das 12h30 às 19h, de segunda a sexta<br>Plantão 24 horas, todos os dias</p>\n<p>Telefone: <a href=\"tel:+554836647000\">+55 (48) 3664-7000</a><br>Emergência: <a href=\"tel:199\">199</a><br>Alertas da Defesa Civil: SMS 40199</p>\n<h4>Endereço</h4>\n<p>Defesa Civil do Estado de Santa Catarina<br>Av. Ivo Silveira, nº 2320<br>Capoeiras, Florianópolis, SC<br>CEP 88085-001</p>\n<p>Mais informações no site da <a href=\"https://www.defesacivil.sc.gov.br/\" target=\"_blank\">Defesa Civil de Santa Catarina</a>.</p>",
     "enable_comments": false,
     "template_name": "",
     "registration_required": false,
@@ -20,7 +20,7 @@
   "fields": {
     "url": "/contact-us/",
     "title": "Contact us",
-    "content": "<h4>Service</h4>\n<p>Office hours: 12:30 pm to 7 pm, Monday to Friday<br>24-hour on-call service, every day</p>\n<p>Phone: +55 (48) 3664-7000<br>Emergency: 199<br>Civil Defense alerts: SMS 40199</p>\n<h4>Address</h4>\n<p>Defesa Civil do Estado de Santa Catarina<br>Av. Ivo Silveira, nº 2320<br>Capoeiras, Florianópolis, SC<br>CEP 88085-001, Brazil</p>\n<p>More information on the <a href=\"https://www.defesacivil.sc.gov.br/\" target=\"_blank\">Santa Catarina Civil Defense</a> website (in Portuguese).</p>",
+    "content": "<h4>Service</h4>\n<p>Office hours: 12:30 pm to 7 pm, Monday to Friday<br>24-hour on-call service, every day</p>\n<p>Phone: <a href=\"tel:+554836647000\">+55 (48) 3664-7000</a><br>Emergency: <a href=\"tel:199\">199</a><br>Civil Defense alerts: SMS 40199</p>\n<h4>Address</h4>\n<p>Defesa Civil do Estado de Santa Catarina<br>Av. Ivo Silveira, nº 2320<br>Capoeiras, Florianópolis, SC<br>CEP 88085-001, Brazil</p>\n<p>More information on the <a href=\"https://www.defesacivil.sc.gov.br/\" target=\"_blank\">Santa Catarina Civil Defense</a> website (in Portuguese).</p>",
     "enable_comments": false,
     "template_name": "",
     "registration_required": false,

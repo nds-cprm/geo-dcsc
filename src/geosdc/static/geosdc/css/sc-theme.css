@@ -403,3 +403,153 @@ h1, h2, h3,
     font-weight: 800;
     line-height: 2.5rem;
 }
+
+/*
+ * Páginas do Django (body.gn-legacy): o #wrap tem margem superior de 60px (resto da navbar antiga do
+ * GeoNode; a navbar atual é fixa e tem placeholder próprio) e o .page-header mais 32px do Bootstrap,
+ * o que deixava uns 100px vazios entre a navbar e o título. Ficam 10px do padding do #wrap e 24px
+ * antes do título (escala de espaçamento do manual, p. 53).
+ */
+body.gn-legacy #wrap {
+    margin-top: 0;
+}
+.msgapi .gn-legacy .page-header {
+    margin-top: 1.5rem;
+}
+.msgapi .gn-legacy .page-header h1,
+.msgapi .gn-legacy .page-header h2 {
+    margin-top: 0;
+}
+/*
+ * Título das flatpages: um h1 a partir do geonode-flatpages-editor 0.2.0. Fica com o title-sm
+ * (40/48, "títulos principais de páginas internas"), o mesmo tamanho do h2 que as outras páginas do
+ * Django (login, conta) usam como título, em vez do title-md (48/56) da hierarquia geral.
+ */
+.msgapi .gn-legacy .page-header h1 {
+    font-size: 2.5rem;
+    line-height: 3rem;
+}
+@media (max-width: 767px) {
+    .msgapi .gn-legacy .page-header h1 {
+        font-size: 2rem;
+        line-height: 2.5rem;
+    }
+}
+
+/*
+ * Conteúdo das flatpages (.flatpage-content, template flatpages/default.html do
+ * geonode-flatpages-editor 0.2.0; o editor permite p, h2 a h6, listas, citação, links, imagens e
+ * tabelas, e o título da página é o h1):
+ * - títulos abaixo do título da página: h2 text-xl 28/36 e h3 text-lg 24/32 em Montserrat, h4
+ *   text-md 20/28, h5 text-base 16/24 e h6 text-sm 14/20 em Inter Bold; 32px acima e 12px abaixo,
+ *   e 0 no primeiro;
+ * - texto-base do manual para leitura longa: 16px/24px (WCAG 1.4.4 e 1.4.12), em até ~75 caracteres
+ *   por linha (46rem);
+ * - listas com 8px entre os itens; imagens responsivas (o editor grava width/height) com raio de 5px
+ *   (imagens dentro de contêineres, p. 51); citação com borda cinza (as bordas seguem a escala de
+ *   cinza, nunca as cores da marca, p. 52);
+ * - tabelas (o editor só grava a estrutura): bordas de 1px na escala de cinza, cabeçalho em #F2F2F2
+ *   e texto compacto text-sm 14/20 (células de tabelas de dados, p. 53).
+ */
+.msgapi .gn-legacy .flatpage-content {
+    max-width: 46rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+.msgapi .gn-legacy .flatpage-content p,
+.msgapi .gn-legacy .flatpage-content li {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+.msgapi .gn-legacy .flatpage-content p {
+    margin: 0 0 1rem;
+}
+.msgapi .gn-legacy .flatpage-content h2,
+.msgapi .gn-legacy .flatpage-content h3,
+.msgapi .gn-legacy .flatpage-content h4,
+.msgapi .gn-legacy .flatpage-content h5,
+.msgapi .gn-legacy .flatpage-content h6 {
+    margin: 2rem 0 0.75rem;
+}
+.msgapi .gn-legacy .flatpage-content > :first-child {
+    margin-top: 0;
+}
+.msgapi .gn-legacy .flatpage-content h2 {
+    font-family: var(--geosdc-font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 2.25rem;
+}
+.msgapi .gn-legacy .flatpage-content h3 {
+    font-family: var(--geosdc-font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 2rem;
+}
+.msgapi .gn-legacy .flatpage-content h4 {
+    font-family: var(--geosdc-font-text);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.75rem;
+}
+.msgapi .gn-legacy .flatpage-content h5 {
+    font-family: var(--geosdc-font-text);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5rem;
+}
+.msgapi .gn-legacy .flatpage-content h6 {
+    font-family: var(--geosdc-font-text);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+}
+.msgapi .gn-legacy .flatpage-content ul,
+.msgapi .gn-legacy .flatpage-content ol {
+    margin: 0 0 1rem;
+    padding-left: 1.5rem;
+}
+.msgapi .gn-legacy .flatpage-content li {
+    margin-bottom: 0.5rem;
+}
+.msgapi .gn-legacy .flatpage-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+.msgapi .gn-legacy .flatpage-content blockquote {
+    margin: 1.5rem 0;
+    padding: 0.5rem 1rem;
+    border-left: 4px solid #CCCCCC;
+    color: #4A4A4A;
+    font-size: 1rem;
+}
+.msgapi .gn-legacy .flatpage-content blockquote p:last-child {
+    margin-bottom: 0;
+}
+.msgapi .gn-legacy .flatpage-content table {
+    width: 100%;
+    margin: 1.5rem 0;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+.msgapi .gn-legacy .flatpage-content caption {
+    padding: 0 0 0.5rem;
+    caption-side: top;
+    color: #4A4A4A;
+    font-weight: 700;
+    text-align: left;
+}
+.msgapi .gn-legacy .flatpage-content th,
+.msgapi .gn-legacy .flatpage-content td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #D9D9D9;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+.msgapi .gn-legacy .flatpage-content th {
+    background-color: #F2F2F2;
+    font-weight: 700;
+}
