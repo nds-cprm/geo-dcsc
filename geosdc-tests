@@ -29,7 +29,7 @@
 #                     GeoNode comparam textos em inglês e falham com o idioma pt (ex.: --lang pt)
 #       --relaxed     roda django/celery/geoserver como root e com filesystem gravável, para separar
 #                     falhas causadas pela execução sem root / somente leitura
-#       --no-data     não monta os dados de teste do GeoNode (ver abaixo)
+#       --no-data     não monta os dados de teste do GeoNode nem importa as camadas de exemplo (ver abaixo)
 #   -h, --help        mostra esta ajuda
 #
 # Dados de teste: o wheel do GeoNode no PyPI não traz os arquivos de dados dos testes (fixtures de
@@ -39,13 +39,17 @@
 # instalado e em /usr/src/geonode (vários testes usam caminhos relativos à raiz do fonte, como
 # "geonode/base/fixtures/..."; ver o diretório de trabalho abaixo). Os .py da tag são idênticos aos do wheel; o fonte só
 # acrescenta os dados.
+# Com a stack saudável, e antes do primeiro grupo, importa as camadas de exemplo do gisdata com o
+# importlayers, como o "paver setup_data" da CI (os testes de csw e upload consultam esses dados por
+# HTTP); o log fica em importlayers.log, junto dos logs dos grupos.
 #
 # Como no .env_test da CI do GeoNode, a stack de testes roda, independente do .env, com:
 #   SOCIALACCOUNT_OIDC_PROVIDER_ENABLED=True   (testes do provider geonode_openid_connect)
 #   SITEURL=http://localhost:8000/ e GEOSERVER_WEB_UI_LOCATION=http://localhost:8000/geoserver/
 #     (o GeoNode chama a si mesmo pelo SITEURL, e dentro do container só o uWSGI atende, na 8000;
 #     sem nginx na stack de testes, e vários testes esperam essa URL fixa)
-#   ASYNC_SIGNALS=False e ACCOUNT_OPEN_SIGNUP=True
+#   ASYNC_SIGNALS=False, ACCOUNT_OPEN_SIGNUP=True, ACCOUNT_OPEN_SOCIALSIGNUP=True e
+#   SAFE_URL_CHECK_ENABLED=False (importação de WMS em localhost)
 #
 # Os testes rodam em /tmp/geonode-tests (tmpfs do container, gravável), com o link "geonode" para o
 # pacote do fonte: os caminhos relativos dos testes funcionam e os arquivos que eles criam no
@@ -234,6 +238,13 @@ test_env_overrides=(
     "ASYNC_SIGNALS=False"
     # Cadastro aberto: test_users_register_email_verification cadastra um usuário pelo formulário
     "ACCOUNT_OPEN_SIGNUP=True"
+    # Cadastro pelo login social aberto (padrão do GeoNode; o .env_test não define): os testes do
+    # geonode_openid_connect criam o usuário no login social
+    "ACCOUNT_OPEN_SOCIALSIGNUP=True"
+    # Sem o bloqueio de URLs locais/privadas (proteção contra SSRF) no upload de recursos remotos: os
+    # testes de importação de WMS usam http://localhost:8000/proxy (os testes do próprio bloqueio o
+    # religam com override_settings)
+    "SAFE_URL_CHECK_ENABLED=False"
 )
 for kv in "${test_env_overrides[@]}"; do
     sed -i.bak -E "/^${kv%%=*}=/d" "$env_copy" && rm -f "$env_copy.bak"
@@ -320,6 +331,12 @@ wait_healthy() {
             exited*|dead*|missing) echo "O serviço $svc parou ($status); veja: ${compose[*]} -p $project logs $svc" >&2; return 1 ;;
         esac
         [ "$waited" -lt "$boot_timeout" ] || { echo "Tempo esgotado esperando o $svc ficar saudável ($status)" >&2; return 1; }
+        # No Podman, o healthcheck periódico depende de um timer (systemd) que às vezes para de
+        # disparar: o container fica "unhealthy"/"starting" para sempre, com o serviço já no ar.
+        # Roda a verificação a cada 30 s, o que também atualiza o estado do container.
+        if [ "$engine" = podman ] && [ "$waited" -gt 0 ] && [ $((waited % 30)) -eq 0 ]; then
+            podman healthcheck run "$cid" >/dev/null 2>&1 || true
+        fi
         sleep 10; waited=$((waited + 10))
     done
 }
@@ -332,6 +349,33 @@ wait_healthy django
 echo ">> Subindo celery e geoserver" >&2
 dc_up celery geoserver
 wait_healthy geoserver
+
+# Camadas de exemplo, como o "paver setup_data" da CI: importlayers envia os arquivos do gisdata pela
+# API de upload do próprio django (SITEURL na porta 8000), e o celery os publica no banco principal e
+# no GeoServer. Os testes de csw e de upload consultam esses dados por HTTP, fora do banco de teste.
+# Credenciais: ADMIN_USERNAME/ADMIN_PASSWORD do env (não são impressas)
+if $test_data; then
+    echo ">> Importando as camadas de exemplo do gisdata (log em $log_dir/importlayers.log)" >&2
+    start=$(date +%s)
+    set +e
+    dc exec -T django bash -s > "$log_dir/importlayers.log" 2>&1 <<'EOF'
+set -e
+umask 0002
+[ -f "$HOME/.override_env" ] && source "$HOME/.override_env"
+export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-geosdc.settings}"
+mkdir -p /tmp/geonode-tests && cd /tmp/geonode-tests
+GOOD_DATA="$(python -c 'import gisdata; print(gisdata.GOOD_DATA)')"
+python /usr/src/project/manage.py importlayers -v2 -hh "$SITEURL" "$GOOD_DATA"
+EOF
+    rc=$?
+    set -e
+    n_ok="$(python3 -c 'import json,re,sys
+t=open(sys.argv[1]).read(); m=re.search(r"Importlayers results:\s*(\{.*\})", t, re.S)
+r=json.loads(m.group(1)) if m else None
+print("%d importadas, %d com erro" % (len(r["success"]), len(r["errors"])) if r else "sem resultado")' "$log_dir/importlayers.log" 2>/dev/null || echo "sem resultado")"
+    echo ">> importlayers: rc=$rc, $n_ok, $(( ($(date +%s) - start) / 60 )) min" >&2
+    [ "$rc" -eq 0 ] || echo "AVISO: importlayers falhou; os grupos csw e upload devem falhar nos testes que dependem dos dados" >&2
+fi
 
 # --- Execução dos grupos ----------------------------------------------------------------------------
 pg_user="$(env_get POSTGRES_USER)"; pg_user="${pg_user:-postgres}"
