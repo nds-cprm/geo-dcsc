@@ -1,5 +1,9 @@
 {% extends "geonode-mapstore-client/snippets/head.html" %}
 
+{% block favicon %}
+{% include "geosdc/snippets/favicon.html" %}
+{% endblock favicon %}
+
 {% block extras %}
 {{ block.super }}
 {# aviso de cookies; carrega o Google Tag Manager só depois do aceite #}

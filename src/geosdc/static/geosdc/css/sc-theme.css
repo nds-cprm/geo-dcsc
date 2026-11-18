@@ -236,3 +236,96 @@ h1, h2, h3,
 .gn-hero .carousel-header {
     font-family: var(--geosdc-font-display);
 }
+
+/*
+ * Estado de foco do manual (pp. 51 e 52, "Estado de foco" e "Traçado"): anel de 3px (border.width
+ * do foco), afastado 4px do elemento ("deslocamento"), com raio 4px maior que o do elemento
+ * ("valor do raio"). O outline acompanha o border-radius nos navegadores atuais e, com o
+ * outline-offset de 4px, o raio do anel já fica +4px. Cor: --ms-focus-color (#2B8C38, 4,3:1 sobre
+ * branco). Só em :focus-visible, para o anel aparecer na navegação por teclado (e nos campos de
+ * texto) e não a cada clique.
+ * Especificidade (0,3,0) acima do foco do Bootstrap do client (.msgapi a:focus, .msgapi .btn:focus,
+ * .msgapi .form-control:focus), mas abaixo dos componentes que escondem o outline de propósito
+ * porque mostram o foco no contêiner (ex.: .msgapi .Select-control .Select-input:focus,
+ * .msgapi .ms-resources-search-field input:focus).
+ * O outline-offset leva !important porque o client força ".msgapi :focus { outline-offset: 0
+ * !important }" (e a cor do outline em --ms-focus-color, também com !important). Só ele: a
+ * espessura e o estilo ficam sem !important, para não vencer os outline: none de propósito.
+ */
+.msgapi :is(a, button, .btn, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid var(--ms-focus-color, #2B8C38);
+    outline-offset: 4px !important;
+}
+/* checkbox, radio e arquivo: o Bootstrap do client usa input[type=...]:focus (0,3,1), mais específico */
+.msgapi input:is([type=checkbox], [type=radio], [type=file]):focus-visible {
+    outline: 3px solid var(--ms-focus-color, #2B8C38);
+}
+/* sem o brilho azul do Bootstrap nos campos: o anel já indica o foco */
+.msgapi .form-control:focus-visible {
+    box-shadow: none;
+}
+
+/*
+ * Links de texto (hyperlinks do manual): azul #2666AB, hover #1C458F (--ms-link-color e
+ * --ms-link-hover-color), sublinhados e com peso 500, para se destacarem do texto (ex.: "Esqueceu
+ * sua senha?" no login, links das flatpages, "Ver o metadado inteiro" no detalhe do recurso).
+ * Só links de texto: ficam de fora os que têm classe ou role (botões, abas, itens de menu, cards)
+ * e os de contextos com estilo próprio (menus suspensos, abas, navbar, rodapé, controles do mapa).
+ */
+.msgapi a:not([class], [role], .dropdown-menu a, .nav a, .gn-brand-navbar a, .geosdc-footer a, .ol-control a) {
+    color: var(--ms-link-color, #2666AB);
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+.msgapi a:not([class], [role], .dropdown-menu a, .nav a, .gn-brand-navbar a, .geosdc-footer a, .ol-control a):hover,
+.msgapi a:not([class], [role], .dropdown-menu a, .nav a, .gn-brand-navbar a, .geosdc-footer a, .ol-control a):focus {
+    color: var(--ms-link-hover-color, #1C458F);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+}
+
+/*
+ * Título da faixa de boas-vindas (ex.: "GeoSDC") como título de destaque do manual (escala
+ * tipográfica, p. 42): title-lg, "títulos impactantes do topo de landing pages", 56px (3.5rem) com
+ * altura de linha de 72px (4.5rem), em Extrabold (800). Em telas estreitas, title-sm (40px/48px).
+ * O client usa 5.25rem com peso lighter (e 3.0625rem numa media query).
+ */
+.msgapi .gn-hero .jumbotron .gn-hero-description h1,
+.msgapi .gn-hero .jumbotron .carousel-header {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 4.5rem;
+}
+@media (max-width: 767px) {
+    .msgapi .gn-hero .jumbotron .gn-hero-description h1,
+    .msgapi .gn-hero .jumbotron .carousel-header {
+        font-size: 2.5rem;
+        line-height: 3rem;
+    }
+}
+
+/*
+ * Subtítulo da faixa de boas-vindas como "lead text" do manual (escala tipográfica, p. 42):
+ * text-md, Inter 20px (1.25rem) com altura de linha de 28px (1.75rem), peso normal. Em telas
+ * estreitas, text-base (16px/24px). O client usa 1.3125rem com peso lighter (e 0.875rem numa media
+ * query); mesmo seletor do client, para vencê-lo.
+ */
+.msgapi .gn-hero .jumbotron .gn-hero-description p:not(.gn-hero-tools) {
+    font-family: var(--geosdc-font-text);
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1.75rem;
+}
+@media (max-width: 767px) {
+    /* margem lateral de 16px do manual (pontos de quebra, p. 45): sem ela o texto encosta na borda */
+    .msgapi .gn-hero .jumbotron .gn-hero-description {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    .msgapi .gn-hero .jumbotron .gn-hero-description p:not(.gn-hero-tools) {
+        font-size: 1rem;
+        line-height: 1.5rem;
+    }
+}

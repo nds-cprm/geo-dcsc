@@ -2,6 +2,8 @@
 
 {% block extra_head %}
 {{ block.super }}
+{# PNG e apple-touch-icon; o favicon.ico já vem do base.html do GeoNode (mesmo arquivo) #}
+{% include "geosdc/snippets/favicon.html" %}
 {# aviso de cookies; carrega o Google Tag Manager só depois do aceite #}
 {% include "geosdc/snippets/cookie_consent.html" %}
 {% endblock extra_head %}

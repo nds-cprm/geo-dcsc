@@ -1,0 +1,11 @@
+{% load static %}
+{% comment %}
+Favicon, a partir do emblema da Defesa Civil de SC (static/geosdc/img/defesa-civil-sc-icon.png):
+favicon.ico (16, 32 e 48px) em static/geonode/img/, o mesmo caminho do GeoNode, e PNGs em
+static/geosdc/img/favicon/ (16 e 32px; apple-touch-icon de 180px com fundo branco, porque o iOS
+preenche a transparência de preto). Incluído no head.html do client (bloco favicon) e no base.html.
+{% endcomment %}
+<link rel="icon" href="{% static 'geonode/img/favicon.ico' %}" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'geosdc/img/favicon/favicon-32x32.png' %}">
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'geosdc/img/favicon/favicon-16x16.png' %}">
+<link rel="apple-touch-icon" sizes="180x180" href="{% static 'geosdc/img/favicon/apple-touch-icon.png' %}">

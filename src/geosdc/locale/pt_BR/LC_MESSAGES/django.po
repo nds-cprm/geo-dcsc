@@ -761,3 +761,12 @@ msgstr "Redes sociais"
 #: geosdc/templates/geonode-mapstore-client/snippets/footer.html
 msgid "Contact us"
 msgstr "Fale conosco"
+
+#: geosdc/templates/geonode-mapstore-client/snippets/brand_navbar.html
+msgid "Civil Defense of Santa Catarina"
+msgstr "Defesa Civil de Santa Catarina"
+
+#. texto padrão da faixa de boas-vindas (default do filtro, não extraído pelo makemessages)
+#: geosdc/templates/geonode-mapstore-client/snippets/hero.html
+msgid "Data and maps from the SC Department of Civil Protection and Defense"
+msgstr "Dados e mapas da Secretaria de Proteção e Defesa Civil de SC"

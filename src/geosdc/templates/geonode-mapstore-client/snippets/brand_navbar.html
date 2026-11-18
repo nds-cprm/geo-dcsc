@@ -1,0 +1,17 @@
+{% extends "geonode-mapstore-client/snippets/brand_navbar.html" %}
+{% load static i18n %}
+{% comment %}
+Logotipo do cabeçalho. Bloco "logo" do brand_navbar.html do client 5.0.3 (comparar ao atualizar o
+client), com o emblema da Proteção e Defesa Civil de Santa Catarina
+(static/geosdc/img/defesa-civil-sc-icon.png) no lugar do logotipo do GeoNode. A logomarca enviada
+pelo admin (GeoNode Themes, custom_theme.logo) continua tendo prioridade, com o tamanho do client.
+{% endcomment %}
+{% block logo %}
+    <a href="/">
+        {% if custom_theme.logo and custom_theme.logo.url %}
+            <img src="{{ custom_theme.logo.url }}">
+        {% else %}
+            <img class="geosdc-logo" src="{% static 'geosdc/img/defesa-civil-sc-icon.png' %}" alt="{% trans 'Civil Defense of Santa Catarina' %}">
+        {% endif %}
+    </a>
+{% endblock %}
