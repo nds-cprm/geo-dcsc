@@ -1,11 +1,12 @@
-{% load i18n %}
+{% load i18n static %}
 {% comment %}
 Rodapé do client (faixa fixa no fim da tela, como no GeoNode), com:
 - links para as páginas "Fale conosco" (CONTACT_PAGE_URL) e "Política de cookies" (COOKIE_POLICY_URL),
   do context processor geosdc.context_processors.site_pages; vazios, não aparecem. A política de
   cookies tem o link que reabre o aviso de cookies (#preferencias-de-cookies);
 - redes sociais da Defesa Civil de SC, com os ícones do site da Defesa Civil (Font Awesome Free
-  5.15.4, em geosdc/icons/social/, embutidos para herdar a cor do link).
+  5.15.4, em geosdc/icons/social/, embutidos para herdar a cor do link);
+- à direita das redes sociais, o selo "Padrão sc.gov.br" (static/geosdc/img/logo_assinatura_colorido_preto.svg).
 Manter a classe gn-footer e o gn-footer-placeholder: plugins do client medem o .gn-footer
 (footerNodeSelector) para descontar a altura dele, e o placeholder reserva o espaço da faixa.
 {% endcomment %}
@@ -34,6 +35,7 @@ Manter a classe gn-footer e o gn-footer-placeholder: plugins do client medem o .
         <li><a href="https://www.tiktok.com/@defesacivilsc" target="_blank" rel="noopener" title="TikTok" aria-label="TikTok">{% include "geosdc/icons/social/tiktok.svg" %}</a></li>
         <li><a href="https://www.youtube.com/channel/UCYfYM9ccjVTZmn4BG1fJENg" target="_blank" rel="noopener" title="YouTube" aria-label="YouTube">{% include "geosdc/icons/social/youtube.svg" %}</a></li>
     </ul>
+    <img class="geosdc-footer-seal" src="{% static 'geosdc/img/logo_assinatura_colorido_preto.svg' %}" alt="Padrão sc.gov.br" width="144" height="36">
 </footer>
 
 <script>

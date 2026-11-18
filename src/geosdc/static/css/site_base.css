@@ -68,3 +68,10 @@
     width: 18px;
     height: 18px;
 }
+
+/* selo "Padrão sc.gov.br", à direita das redes sociais, na altura das bolas (36px) */
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-seal {
+    display: block;
+    width: auto;
+    height: 36px;
+}
