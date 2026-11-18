@@ -1,14 +1,25 @@
-{% load static i18n %}
+{% load i18n %}
 {% comment %}
-Rodapé do client: banner do governo de SC e links da política de cookies (COOKIE_POLICY_URL, do
-context processor geosdc.context_processors.site_pages) e das preferências de cookies (reabre o aviso
-de cookies, geosdc/snippets/cookie_consent.html).
+Rodapé do client (faixa fixa no fim da tela, como no GeoNode), com:
+- links para as páginas "Fale conosco" (CONTACT_PAGE_URL) e "Política de cookies" (COOKIE_POLICY_URL),
+  do context processor geosdc.context_processors.site_pages; vazios, não aparecem. A política de
+  cookies tem o link que reabre o aviso de cookies (#preferencias-de-cookies);
+- redes sociais da Defesa Civil de SC, com os ícones do site da Defesa Civil (Font Awesome Free
+  5.15.4, em geosdc/icons/social/, embutidos para herdar a cor do link).
+Manter a classe gn-footer e o gn-footer-placeholder: plugins do client medem o .gn-footer
+(footerNodeSelector) para descontar a altura dele, e o placeholder reserva o espaço da faixa.
 {% endcomment %}
 
 <div class="gn-footer-placeholder"></div>
-<footer class="gn-footer">
-    <img src="{% static 'geonode/img/footer.png' %}" />
+<footer class="gn-footer geosdc-footer">
     <ul class="geosdc-footer-links">
+        {% if CONTACT_PAGE_URL %}
+        <li>
+            <a href="{{ CONTACT_PAGE_URL }}" class="nav-link">
+                <span>{% trans "Contact us" %}</span>
+            </a>
+        </li>
+        {% endif %}
         {% if COOKIE_POLICY_URL %}
         <li>
             <a href="{{ COOKIE_POLICY_URL }}" class="nav-link">
@@ -16,11 +27,12 @@ de cookies, geosdc/snippets/cookie_consent.html).
             </a>
         </li>
         {% endif %}
-        <li>
-            <a href="#preferencias-de-cookies" class="nav-link">
-                <span>{% trans "Cookie preferences" %}</span>
-            </a>
-        </li>
+    </ul>
+    <ul class="geosdc-footer-social" aria-label="{% trans 'Social media' %}">
+        <li><a href="https://www.instagram.com/defesacivilsc/" target="_blank" rel="noopener" title="Instagram" aria-label="Instagram">{% include "geosdc/icons/social/instagram.svg" %}</a></li>
+        <li><a href="https://www.facebook.com/defesacivilsc/" target="_blank" rel="noopener" title="Facebook" aria-label="Facebook">{% include "geosdc/icons/social/facebook-f.svg" %}</a></li>
+        <li><a href="https://www.tiktok.com/@defesacivilsc" target="_blank" rel="noopener" title="TikTok" aria-label="TikTok">{% include "geosdc/icons/social/tiktok.svg" %}</a></li>
+        <li><a href="https://www.youtube.com/channel/UCYfYM9ccjVTZmn4BG1fJENg" target="_blank" rel="noopener" title="YouTube" aria-label="YouTube">{% include "geosdc/icons/social/youtube.svg" %}</a></li>
     </ul>
 </footer>
 

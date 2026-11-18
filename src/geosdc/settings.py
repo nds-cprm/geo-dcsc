@@ -156,6 +156,13 @@ COOKIE_POLICY_URLS = {
     "pt": COOKIE_POLICY_URL,
     "en": os.getenv("COOKIE_POLICY_URL_EN", "/pages/cookie-policy/"),
 }
+# Página "Fale conosco" (contato e endereço da Defesa Civil), por idioma da interface: flatpages da
+# fixture geosdc-flatpages-fale-conosco.json; definida e vazia na env, o link não aparece no rodapé
+CONTACT_PAGE_URL = os.getenv("CONTACT_PAGE_URL", "/pages/fale-conosco/")
+CONTACT_PAGE_URLS = {
+    "pt": CONTACT_PAGE_URL,
+    "en": os.getenv("CONTACT_PAGE_URL_EN", "/pages/contact-us/"),
+}
 TEMPLATES[0]["OPTIONS"]["context_processors"] += [
     "geosdc.context_processors.google_tag_manager",
     "geosdc.context_processors.site_pages",

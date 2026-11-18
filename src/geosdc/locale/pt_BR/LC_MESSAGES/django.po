@@ -753,3 +753,11 @@ msgstr "Carregando..."
 #: geosdc/templates/geosdc/snippets/select_i18n.html
 msgid "Type to search"
 msgstr "Digite para buscar"
+
+#: geosdc/templates/geonode-mapstore-client/snippets/footer.html
+msgid "Social media"
+msgstr "Redes sociais"
+
+#: geosdc/templates/geonode-mapstore-client/snippets/footer.html
+msgid "Contact us"
+msgstr "Fale conosco"

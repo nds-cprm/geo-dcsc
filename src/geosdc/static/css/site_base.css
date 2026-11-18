@@ -1,9 +1,70 @@
-/* banner do governo de SC centralizado e, abaixo dele, os links de cookies (snippets/footer.html) */
-.msgapi .gn-footer {
+/*
+ * Rodapé (snippets/footer.html): a faixa fixa do client (.gn-footer), com os links (Fale conosco,
+ * política de cookies) e, logo ao lado deles, as redes sociais, tudo centralizado; em telas
+ * estreitas, os ícones vão para baixo dos links. Cores pelas variáveis --ms-footer-*
+ * (geosdc/css/sc-theme.css).
+ */
+.msgapi .gn-footer.geosdc-footer {
+    flex-wrap: wrap;
     justify-content: center;
-    flex-direction: column;
-    align-items: center;
+    gap: 0.5rem 1rem;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--ms-main-border-color, #D9D9D9);
 }
-.msgapi .gn-footer .geosdc-footer-links {
+.msgapi .gn-footer.geosdc-footer ul {
+    margin: 0;
+}
+/*
+ * Links no padrão do rodapé do portal sc.gov.br (estilo calculado em 2026-11-18): Montserrat 14px,
+ * peso 500, #333333, sem sublinhado, hover em #C4000B (o mesmo vermelho do hover das redes sociais).
+ */
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-links li {
+    font-size: 0.875rem;
+}
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-links a {
+    color: #333333;
+    font-family: var(--geosdc-font-display, 'Montserrat', sans-serif);
+    font-weight: 500;
+    line-height: 1.5;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-links a:hover,
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-links a:focus {
+    color: #C4000B;
+    text-decoration: none;
+}
+
+/*
+ * Redes sociais no modelo do rodapé do site da Defesa Civil (widget de ícones do Elementor, ao lado
+ * do copyright): bolas de 36px, ícone branco de 18px, 5px entre elas e hover em #C4000B. O verde do
+ * site (#8FB13A) dá 2,5:1 com o branco, abaixo dos 3:1 da WCAG 1.4.11 para ícones; no lugar, o tom
+ * mais próximo da paleta do manual que passa: #738C36 (escala "sucesso", 3,8:1).
+ */
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-social {
+    gap: 5px;
+}
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-social li {
+    min-width: 0;
+    padding: 0;
+}
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-social a {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #738C36;
+    color: #FFFFFF;
+    transition: background-color 0.3s;
+}
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-social a:hover,
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-social a:focus {
+    background-color: #C4000B;
+    color: #FFFFFF;
+}
+.msgapi .gn-footer.geosdc-footer .geosdc-icon {
+    width: 18px;
+    height: 18px;
 }

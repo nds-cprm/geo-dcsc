@@ -11,13 +11,21 @@ def google_tag_manager(request):
     return {"GOOGLE_TAG_MANAGER_ID": gtag if GTM_REGEX.match(gtag) else ""}
 
 
+def _page_url(language, name):
+    """Endereço de <name>_URLS para o idioma ("pt", "en"); sem correspondência, vale o <name>_URL."""
+    urls = getattr(settings, f"{name}_URLS", {}) or {}
+    return urls.get(language) or getattr(settings, f"{name}_URL", "")
+
+
 def site_pages(request):
     """
-    Endereço da política de cookies no idioma da requisição, usado no aviso de cookies
-    (geosdc/snippets/cookie_consent.html) e no rodapé (geonode-mapstore-client/snippets/footer.html).
-    COOKIE_POLICY_URLS mapeia o idioma ("pt", "en") para o endereço; sem correspondência, vale o
-    COOKIE_POLICY_URL. Vazio, o link não aparece.
+    Endereços das páginas do site no idioma da requisição. Vazio, o link não aparece.
+    - COOKIE_POLICY_URL: política de cookies, no aviso de cookies (geosdc/snippets/cookie_consent.html)
+      e no rodapé (geonode-mapstore-client/snippets/footer.html);
+    - CONTACT_PAGE_URL: página "Fale conosco", no rodapé.
     """
     language = (getattr(request, "LANGUAGE_CODE", "") or "").split("-")[0]
-    urls = getattr(settings, "COOKIE_POLICY_URLS", {}) or {}
-    return {"COOKIE_POLICY_URL": urls.get(language) or getattr(settings, "COOKIE_POLICY_URL", "")}
+    return {
+        "COOKIE_POLICY_URL": _page_url(language, "COOKIE_POLICY"),
+        "CONTACT_PAGE_URL": _page_url(language, "CONTACT_PAGE"),
+    }
