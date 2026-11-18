@@ -329,3 +329,77 @@ h1, h2, h3,
         line-height: 1.5rem;
     }
 }
+
+/*
+ * Hierarquia de títulos h1 a h6 com a escala tipográfica do manual (p. 42), só nas áreas de conteúdo:
+ * páginas renderizadas pelo Django (body.gn-legacy: login, conta, perfil, flatpages, erro 500) e
+ * seções das páginas de recursos do client (.gn-resource-page-catalog-section, onde o client usa
+ * peso lighter). Fora delas (painéis do mapa, diálogos, detalhes do recurso), h4 a h6 são rótulos
+ * pequenos do client e ficam como estão.
+ *   h1 title-md 48/56 · h2 title-sm 40/48 · h3 text-2xl 32/40 · h4 text-xl 28/36: Montserrat Extrabold
+ *   h5 text-lg 24/32 · h6 text-md 20/28: Inter Bold
+ * Em telas estreitas (até 767px), h1 e h2 descem um nível (40/48 e 32/40).
+ */
+.msgapi .gn-legacy h1, .msgapi .gn-resource-page-catalog .gn-resource-page-catalog-section h1 {
+    font-family: var(--geosdc-font-display);
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 3.5rem;
+}
+.msgapi .gn-legacy h2, .msgapi .gn-resource-page-catalog .gn-resource-page-catalog-section h2 {
+    font-family: var(--geosdc-font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 3rem;
+}
+.msgapi .gn-legacy h3, .msgapi .gn-resource-page-catalog .gn-resource-page-catalog-section h3 {
+    font-family: var(--geosdc-font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 2.5rem;
+}
+.msgapi .gn-legacy h4, .msgapi .gn-resource-page-catalog .gn-resource-page-catalog-section h4 {
+    font-family: var(--geosdc-font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 2.25rem;
+}
+.msgapi .gn-legacy h5, .msgapi .gn-resource-page-catalog .gn-resource-page-catalog-section h5 {
+    font-family: var(--geosdc-font-text);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 2rem;
+}
+.msgapi .gn-legacy h6, .msgapi .gn-resource-page-catalog .gn-resource-page-catalog-section h6 {
+    font-family: var(--geosdc-font-text);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.75rem;
+}
+@media (max-width: 767px) {
+    .msgapi .gn-legacy h1, .msgapi .gn-resource-page-catalog .gn-resource-page-catalog-section h1 {
+        font-size: 2.5rem;
+        line-height: 3rem;
+    }
+    .msgapi .gn-legacy h2, .msgapi .gn-resource-page-catalog .gn-resource-page-catalog-section h2 {
+        font-size: 2rem;
+        line-height: 2.5rem;
+    }
+}
+
+/*
+ * Título das páginas de recursos (/all, /datasets, /documents, /maps, /geostories, /dashboards: um h4
+ * em .gn-resource-page-catalog-content) como título de página secundária do manual (escala
+ * tipográfica, p. 42): text-2xl, 32px (2rem) com altura de linha de 40px (2.5rem), em Montserrat
+ * Extrabold. O client usa 1.75rem com peso lighter (.gn-resource-page-catalog-section h4).
+ * Margens da escala de espaçamento do manual (p. 53): 24px acima (o título encostava na navbar) e
+ * 16px abaixo.
+ */
+.msgapi .gn-resource-page-catalog .gn-resource-page-catalog-content h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-family: var(--geosdc-font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 2.5rem;
+}
