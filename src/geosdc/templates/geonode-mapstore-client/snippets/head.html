@@ -4,4 +4,6 @@
 {{ block.super }}
 {# aviso de cookies; carrega o Google Tag Manager só depois do aceite #}
 {% include "geosdc/snippets/cookie_consent.html" %}
+{# textos padrão dos campos de seleção do client (ex.: filtros por facet do catálogo), fixos em inglês no componente #}
+{% include "geosdc/snippets/select_i18n.html" %}
 {% endblock extras %}

@@ -736,3 +736,20 @@ msgstr "Aceitar cookies"
 #: geosdc/templates/geonode-mapstore-client/snippets/search_bar.html
 msgid "Search..."
 msgstr "Buscar..."
+
+# Textos padrão do componente de seleção do client (templates/geosdc/snippets/select_i18n.html)
+#: geosdc/templates/geosdc/snippets/select_i18n.html
+msgid "Select..."
+msgstr "Selecione..."
+
+#: geosdc/templates/geosdc/snippets/select_i18n.html
+msgid "No results found"
+msgstr "Nenhum resultado encontrado"
+
+#: geosdc/templates/geosdc/snippets/select_i18n.html
+msgid "Loading..."
+msgstr "Carregando..."
+
+#: geosdc/templates/geosdc/snippets/select_i18n.html
+msgid "Type to search"
+msgstr "Digite para buscar"
