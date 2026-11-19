@@ -1,0 +1,21 @@
+{% extends "account/base.html" %}
+{% comment %}
+  Override do account/account_inactive.html do GeoNode 5.0.3 (comparar ao atualizar o GeoNode): mesma
+  estrutura do login (título no .page-header, com a linha embaixo, e o texto em .col-md-8). Os textos
+  são os do GeoNode, idênticos, para as traduções existentes continuarem valendo.
+{% endcomment %}
+
+{% load i18n %}
+
+{% block title %}{% trans "Account Inactive" %}{% endblock %}
+
+{% block body_outer %}
+  <div class="page-header">
+    <h1>{% trans "Account Inactive" %}</h1>
+  </div>
+  <div class="row">
+    <div class="col-md-8">
+      <p>{% trans "This account is inactive." %}</p>
+    </div>
+  </div>
+{% endblock body_outer %}

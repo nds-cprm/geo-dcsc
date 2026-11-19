@@ -421,19 +421,52 @@ body.gn-legacy #wrap {
     margin-top: 0;
 }
 /*
- * Título das flatpages: um h1 a partir do geonode-flatpages-editor 0.2.0. Fica com o title-sm
- * (40/48, "títulos principais de páginas internas"), o mesmo tamanho do h2 que as outras páginas do
- * Django (login, conta) usam como título, em vez do title-md (48/56) da hierarquia geral.
+ * Nas páginas do Django, o h1 é sempre o título da página (flatpages, a partir do
+ * geonode-flatpages-editor 0.2.0; "Conta desativada", "Inscrição fechada" e "Redefinição de senha"
+ * do allauth, fora do .page-header). Fica com o title-sm (40/48, "títulos principais de páginas
+ * internas"), o mesmo tamanho do h2 que as outras páginas (login, conta) usam como título, em vez do
+ * title-md (48/56) da hierarquia geral.
  */
-.msgapi .gn-legacy .page-header h1 {
+.msgapi .gn-legacy h1 {
     font-size: 2.5rem;
     line-height: 3rem;
 }
 @media (max-width: 767px) {
-    .msgapi .gn-legacy .page-header h1 {
+    .msgapi .gn-legacy h1 {
         font-size: 2rem;
         line-height: 2.5rem;
     }
+}
+
+/*
+ * Barras laterais das páginas do Django: títulos dos filtros de "Pessoas" e "Grupos" (h4 em
+ * nav.filter, faixas escuras em maiúsculas do GeoNode) e das caixas laterais de "Ajuda" e
+ * "Desenvolvedores" (h3/h4 na coluna .col-md-4). Com a hierarquia geral (28 e 32px em Extrabold)
+ * estouravam a coluna; ficam com text-base 16/24 (filtros) e text-md 20/28 (caixas).
+ */
+.msgapi .gn-legacy nav.filter h4 {
+    font-family: var(--geosdc-font-text);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5rem;
+}
+.msgapi .gn-legacy .col-md-4 h3,
+.msgapi .gn-legacy .col-md-4 h4 {
+    font-family: var(--geosdc-font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.75rem;
+}
+
+/*
+ * Corpo de texto das páginas do Django com o texto-base do manual (16/24, WCAG 1.4.4 e 1.4.12); o
+ * client usa 14px. Só parágrafos e itens de lista do conteúdo (#wrap): rótulos, campos e botões dos
+ * formulários ficam como estão.
+ */
+.msgapi .gn-legacy #wrap p,
+.msgapi .gn-legacy #wrap li {
+    font-size: 1rem;
+    line-height: 1.5rem;
 }
 
 /*

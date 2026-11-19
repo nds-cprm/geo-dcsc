@@ -168,6 +168,12 @@ COOKIE_POLICY_URLS = {
     "pt": COOKIE_POLICY_URL,
     "en": os.getenv("COOKIE_POLICY_URL_EN", "/pages/cookie-policy/"),
 }
+# Contato mostrado nas páginas da conta (ex.: redefinição de senha, "entre em contato conosco via ..."):
+# THEME_ACCOUNT_CONTACT_EMAIL da env e, sem ele (ou vazio), o ADMIN_EMAIL (o mesmo do usuário admin,
+# task updateadmin do tasks.py); só sem os dois vale o padrão do GeoNode (admin@example.com)
+THEME_ACCOUNT_CONTACT_EMAIL = (
+    os.getenv("THEME_ACCOUNT_CONTACT_EMAIL") or os.getenv("ADMIN_EMAIL") or THEME_ACCOUNT_CONTACT_EMAIL
+)
 # Página "Fale conosco" (contato e endereço da Defesa Civil), por idioma da interface: flatpages da
 # fixture geosdc-flatpages-fale-conosco.json; definida e vazia na env, o link não aparece no rodapé
 CONTACT_PAGE_URL = os.getenv("CONTACT_PAGE_URL", "/pages/fale-conosco/")

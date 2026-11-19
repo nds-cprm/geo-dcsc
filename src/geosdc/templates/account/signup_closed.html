@@ -1,0 +1,21 @@
+{% extends "account/base.html" %}
+{% comment %}
+  Override do account/signup_closed.html do GeoNode 5.0.3 (comparar ao atualizar o GeoNode): mesma
+  estrutura do login (título no .page-header, com a linha embaixo, e o texto em .col-md-8). Os textos
+  são os do GeoNode, idênticos, para as traduções existentes continuarem valendo.
+{% endcomment %}
+
+{% load i18n %}
+
+{% block title %}{% trans "Sign Up Closed" %}{% endblock %}
+
+{% block body_outer %}
+  <div class="page-header">
+    <h1>{% trans "Sign Up Closed" %}</h1>
+  </div>
+  <div class="row">
+    <div class="col-md-8">
+      <p>{% trans "We are sorry, but the sign up is currently closed." %}</p>
+    </div>
+  </div>
+{% endblock body_outer %}
