@@ -18,8 +18,19 @@
  * Links no padrão do rodapé do portal sc.gov.br (estilo calculado em 2026-11-18): Montserrat 14px,
  * peso 500, #333333, sem sublinhado, hover em #C4000B (o mesmo vermelho do hover das redes sociais).
  */
+/* espaço fixo entre os links: o client dá 90px de largura mínima a cada item, e os rótulos curtos
+   ("Ajuda", "Sobre") ficavam com sobra */
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-links {
+    justify-content: center;
+    gap: 0.25rem 1.5rem;
+}
 .msgapi .gn-footer.geosdc-footer .geosdc-footer-links li {
+    min-width: 0;
+    padding: 0;
     font-size: 0.875rem;
+}
+.msgapi .gn-footer.geosdc-footer .geosdc-footer-links .nav-link {
+    padding: 0;
 }
 .msgapi .gn-footer.geosdc-footer .geosdc-footer-links a {
     color: #333333;

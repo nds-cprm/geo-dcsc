@@ -1,7 +1,8 @@
 {% load i18n static %}
 {% comment %}
 Rodapé do client (faixa fixa no fim da tela, como no GeoNode), com:
-- links para as páginas "Fale conosco" (CONTACT_PAGE_URL) e "Política de cookies" (COOKIE_POLICY_URL),
+- links para as páginas "Ajuda", "Sobre" e "Desenvolvedores" do GeoNode (rotas help, about e developer),
+  "Fale conosco" (CONTACT_PAGE_URL) e "Política de cookies" (COOKIE_POLICY_URL),
   do context processor geosdc.context_processors.site_pages; vazios, não aparecem. A política de
   cookies tem o link que reabre o aviso de cookies (#preferencias-de-cookies);
 - redes sociais da Defesa Civil de SC, com os ícones do site da Defesa Civil (Font Awesome Free
@@ -14,6 +15,22 @@ Manter a classe gn-footer e o gn-footer-placeholder: plugins do client medem o .
 <div class="gn-footer-placeholder"></div>
 <footer class="gn-footer geosdc-footer">
     <ul class="geosdc-footer-links">
+        {# páginas do GeoNode (por enquanto, sem conteúdo próprio do geosdc) #}
+        <li>
+            <a href="{% url 'help' %}" class="nav-link">
+                <span>{% trans "Help" %}</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'about' %}" class="nav-link">
+                <span>{% trans "About" %}</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'developer' %}" class="nav-link">
+                <span>{% trans "Developers" %}</span>
+            </a>
+        </li>
         {% if CONTACT_PAGE_URL %}
         <li>
             <a href="{{ CONTACT_PAGE_URL }}" class="nav-link">
